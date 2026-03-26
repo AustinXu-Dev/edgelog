@@ -1,0 +1,69 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const supabase = createBrowserClient();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      router.push('/dashboard');
+      router.refresh();
+    }
+  }
+
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
+      <h2 className="text-lg font-semibold text-gray-100 mb-6">Sign in</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+          autoComplete="email"
+        />
+        <Input
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+          autoComplete="current-password"
+        />
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        <Button type="submit" loading={loading} className="w-full mt-2">
+          Sign in
+        </Button>
+      </form>
+      <p className="text-sm text-gray-500 mt-4 text-center">
+        No account?{' '}
+        <Link href="/register" className="text-indigo-400 hover:text-indigo-300">
+          Sign up
+        </Link>
+      </p>
+    </div>
+  );
+}
