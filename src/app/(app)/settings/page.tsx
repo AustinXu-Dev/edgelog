@@ -18,11 +18,11 @@ export default async function SettingsPage() {
   return (
     <div className="flex flex-col h-full">
       <Topbar title="Settings" />
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-lg space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 max-w-lg space-y-6">
           <div>
-            <p className="text-xs text-gray-500 mb-1">Account</p>
-            <p className="text-sm text-gray-300">{user.email}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">Account</p>
+            <p className="text-sm text-gray-700">{user.email}</p>
           </div>
           <SettingsForm
             userId={user.id}

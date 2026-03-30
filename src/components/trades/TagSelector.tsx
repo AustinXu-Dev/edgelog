@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { TradeTag } from '@/lib/types';
 
-const TAG_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
+const TAG_COLORS = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#db2777', '#0891b2'];
 
 interface Props {
   tradeId: string;
@@ -83,7 +83,7 @@ export function TagSelector({ tradeId, allTags, selectedTagIds: initialSelected,
         <button
           type="button"
           onClick={() => setShowCreate(!showCreate)}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-0.5 border border-dashed border-gray-700 rounded-full"
+          className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-0.5 border border-dashed border-gray-300 rounded-full"
         >
           + new tag
         </button>
@@ -99,14 +99,14 @@ export function TagSelector({ tradeId, allTags, selectedTagIds: initialSelected,
             className="w-36"
           />
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-400">Color</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Color</label>
             <div className="flex gap-1">
               {TAG_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setNewTagColor(c)}
-                  className={`w-5 h-5 rounded-full transition-transform ${newTagColor === c ? 'ring-2 ring-white scale-110' : ''}`}
+                  className={`w-5 h-5 rounded-full transition-transform ${newTagColor === c ? 'ring-2 ring-gray-400 scale-110' : ''}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -115,7 +115,7 @@ export function TagSelector({ tradeId, allTags, selectedTagIds: initialSelected,
           <Button size="sm" onClick={createTag} type="button">Create</Button>
         </div>
       )}
-      {saving && <p className="text-xs text-gray-500">Saving...</p>}
+      {saving && <p className="text-xs text-gray-400">Saving...</p>}
     </div>
   );
 }

@@ -1,17 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { calcPnl, calcRMultiple } from '@/lib/utils/csv';
-import type { Trade, Instrument, Direction, TradeStatus } from '@/lib/types';
+import { Badge } from '@/components/ui/Badge';
+import type { Trade, Instrument, Direction, TradeStatus, TradeTag, TradingAccount } from '@/lib/types';
 
 interface TradeFormProps {
   initialValues?: Partial<Trade>;
   tradeId?: string;
+  allTags?: TradeTag[];
+  initialAccountId?: string | null;
 }
 
 const INSTRUMENTS = [
@@ -35,11 +38,28 @@ function toLocalDatetime(iso: string) {
   return iso.slice(0, 16);
 }
 
-export function TradeForm({ initialValues, tradeId }: TradeFormProps) {
+export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }: TradeFormProps) {
   const router = useRouter();
   const supabase = createBrowserClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+  const [accountId, setAccountId] = useState<string | null>(initialValues?.account_id ?? initialAccountId ?? null);
+
+  useEffect(() => {
+    supabase
+      .from('trading_accounts')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .then(({ data }) => setAccounts(data ?? []));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggleTag(tagId: string) {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+  }
 
   const [form, setForm] = useState({
     instrument: initialValues?.instrument ?? 'NDX100',
@@ -93,14 +113,15 @@ export function TradeForm({ initialValues, tradeId }: TradeFormProps) {
     let r_multiple = null;
 
     if (form.status === 'closed' && exit_price !== null) {
-      const pnl = calcPnl(form.direction as Direction, entry_price, exit_price, position_size, commission);
+      const pnl = calcPnl(form.direction as Direction, entry_price, exit_price, position_size, commission, form.instrument);
       gross_pnl = pnl.gross_pnl;
       net_pnl = pnl.net_pnl;
-      r_multiple = calcRMultiple(form.direction as Direction, entry_price, stop_loss_planned, net_pnl, position_size);
+      r_multiple = calcRMultiple(form.direction as Direction, entry_price, stop_loss_planned, net_pnl, position_size, form.instrument);
     }
 
     const payload = {
       user_id: user.id,
+      account_id: accountId,
       instrument: form.instrument as Instrument,
       instrument_type: form.instrument_type,
       direction: form.direction as Direction,
@@ -137,6 +158,12 @@ export function TradeForm({ initialValues, tradeId }: TradeFormProps) {
       setError(result.error.message);
       setLoading(false);
     } else {
+      // Save tag links for new trades
+      if (!tradeId && selectedTagIds.length > 0) {
+        await supabase.from('trade_tag_links').insert(
+          selectedTagIds.map((tag_id) => ({ trade_id: result.data.id, tag_id }))
+        );
+      }
       router.push(`/trades/${result.data.id}`);
       router.refresh();
     }
@@ -244,14 +271,59 @@ export function TradeForm({ initialValues, tradeId }: TradeFormProps) {
         className="w-40"
       />
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {accounts.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            Trading Account
+            <span className="ml-1.5 text-gray-400 font-normal normal-case tracking-normal">(optional)</span>
+          </label>
+          <select
+            value={accountId ?? ''}
+            onChange={(e) => setAccountId(e.target.value || null)}
+            className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-56"
+          >
+            <option value="">No account</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!tradeId && allTags !== undefined && (
+        <div className="flex flex-col gap-2">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            Tags
+            <span className="ml-1.5 text-gray-400 font-normal normal-case tracking-normal">(optional)</span>
+          </label>
+          {allTags.length === 0 ? (
+            <p className="text-sm text-gray-400">No tags yet. Create tags from a trade&apos;s detail page.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => toggleTag(tag.id)}
+                  className={`transition-opacity ${selectedTagIds.includes(tag.id) ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+                >
+                  <Badge label={tag.name} color={tag.color} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-3">
         <Button type="submit" loading={loading}>
+          {!loading && <i className={`lni ${tradeId ? 'lni-floppy-disk-1' : 'lni-plus'} text-sm`} />}
           {tradeId ? 'Update Trade' : 'Log Trade'}
         </Button>
         <Button type="button" variant="ghost" onClick={() => router.back()}>
-          Cancel
+          <i className="lni lni-xmark text-sm" />Cancel
         </Button>
       </div>
     </form>

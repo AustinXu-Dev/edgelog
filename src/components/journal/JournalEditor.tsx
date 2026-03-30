@@ -59,7 +59,7 @@ export function JournalEditor({ tradeId, initial }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-300">Rating</label>
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Rating</label>
         <StarRating value={rating} onChange={setRating} />
       </div>
 
@@ -78,13 +78,13 @@ export function JournalEditor({ tradeId, initial }: Props) {
         rows={6}
       />
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex items-center gap-3">
         <Button onClick={handleSave} loading={saving} type="button">
-          Save Notes
+          {!saving && <i className="lni lni-floppy-disk-1 text-sm" />}Save Notes
         </Button>
-        {saved && <span className="text-sm text-emerald-400">Saved!</span>}
+        {saved && <span className="text-sm text-emerald-600 flex items-center gap-1"><i className="lni lni-check" />Saved!</span>}
       </div>
     </div>
   );

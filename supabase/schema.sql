@@ -171,7 +171,28 @@ create index daily_journal_user_date on public.daily_journal(user_id, date desc)
 
 
 -- ============================================================
--- 7. STORAGE BUCKET
+-- 7. DAILY JOURNAL TRADE LINKS (junction)
+-- ============================================================
+create table public.daily_journal_trade_links (
+  journal_id uuid not null references public.daily_journal(id) on delete cascade,
+  trade_id uuid not null references public.trades(id) on delete cascade,
+  primary key (journal_id, trade_id)
+);
+
+alter table public.daily_journal_trade_links enable row level security;
+
+create policy "Users can manage own journal trade links"
+  on public.daily_journal_trade_links for all
+  using (
+    exists (
+      select 1 from public.daily_journal j
+      where j.id = journal_id and j.user_id = auth.uid()
+    )
+  );
+
+
+-- ============================================================
+-- 8. STORAGE BUCKET
 -- ============================================================
 -- Run this separately in Storage > New bucket, or via SQL:
 insert into storage.buckets (id, name, public)

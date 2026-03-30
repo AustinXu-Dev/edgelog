@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { TradeTable } from '@/components/trades/TradeTable';
@@ -30,11 +31,14 @@ export default async function TradesPage({ searchParams }: PageProps) {
     .eq('user_id', user.id)
     .order('entry_datetime', { ascending: false });
 
+  const activeAccountId = cookies().get('active_account_id')?.value ?? null;
+
   if (searchParams.instrument) query = query.eq('instrument', searchParams.instrument);
   if (searchParams.direction) query = query.eq('direction', searchParams.direction);
   if (searchParams.status) query = query.eq('status', searchParams.status);
   if (searchParams.from) query = query.gte('entry_datetime', searchParams.from);
   if (searchParams.to) query = query.lte('entry_datetime', searchParams.to + 'T23:59:59Z');
+  if (activeAccountId) query = query.eq('account_id', activeAccountId);
 
   const { data: trades } = await query;
 
@@ -44,19 +48,19 @@ export default async function TradesPage({ searchParams }: PageProps) {
         title="Trades"
         actions={
           <Link href="/trades/new">
-            <Button size="sm">+ New Trade</Button>
+            <Button size="sm"><i className="lni lni-plus text-sm" />New Trade</Button>
           </Link>
         }
       />
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
           <TradeFilters />
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-500">{trades?.length ?? 0} trades</p>
             <Link href="/trades/import">
-              <Button variant="ghost" size="sm">Import CSV</Button>
+              <Button variant="secondary" size="sm"><i className="lni lni-upload-1 text-sm" />Import CSV</Button>
             </Link>
           </div>
           <TradeTable trades={(trades as Trade[]) ?? []} />

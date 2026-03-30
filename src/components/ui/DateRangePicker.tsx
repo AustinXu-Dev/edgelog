@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Input } from './Input';
 import { Button } from './Button';
 
 interface DateRangePickerProps {
@@ -24,9 +23,21 @@ export function DateRangePicker({ from, to }: DateRangePickerProps) {
   }
 
   return (
-    <form onSubmit={handleApply} className="flex items-end gap-2">
-      <Input label="From" type="date" name="from" defaultValue={from} className="w-36" />
-      <Input label="To" type="date" name="to" defaultValue={to} className="w-36" />
+    <form onSubmit={handleApply} className="flex items-center gap-1.5">
+      <span className="text-xs text-gray-500 font-medium">From</span>
+      <input
+        type="date"
+        name="from"
+        defaultValue={from}
+        className="bg-white border border-gray-300 rounded-md px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-36"
+      />
+      <span className="text-xs text-gray-500 font-medium">To</span>
+      <input
+        type="date"
+        name="to"
+        defaultValue={to}
+        className="bg-white border border-gray-300 rounded-md px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-36"
+      />
       <Button type="submit" variant="secondary" size="sm">
         Apply
       </Button>

@@ -27,14 +27,16 @@ export function DeleteTradeButton({ tradeId }: Props) {
       <div className="flex items-center gap-2">
         <span className="text-xs text-gray-400">Delete?</span>
         <Button variant="danger" size="sm" onClick={handleDelete} loading={loading}>Yes</Button>
-        <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>No</Button>
+        <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+          <i className="lni lni-xmark text-sm" />No
+        </Button>
       </div>
     );
   }
 
   return (
     <Button variant="danger" size="sm" onClick={() => setConfirming(true)}>
-      Delete
+      <i className="lni lni-trash-3 text-sm" />Delete
     </Button>
   );
 }

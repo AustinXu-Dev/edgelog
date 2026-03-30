@@ -3,7 +3,8 @@ import type { Trade, TradeWithDetails } from '../types';
 
 export async function getTrades(
   fromDate?: string,
-  toDate?: string
+  toDate?: string,
+  accountId?: string | null
 ): Promise<Trade[]> {
   const supabase = createServerClient();
   const {
@@ -19,6 +20,7 @@ export async function getTrades(
 
   if (fromDate) query = query.gte('entry_datetime', fromDate);
   if (toDate) query = query.lte('entry_datetime', toDate + 'T23:59:59Z');
+  if (accountId) query = query.eq('account_id', accountId);
 
   const { data } = await query;
   return data ?? [];

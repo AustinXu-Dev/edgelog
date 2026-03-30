@@ -19,7 +19,7 @@ export function PnLByTimeOfDay({ data }: Props) {
 
   if (formatted.length === 0) {
     return (
-      <div className="flex items-center justify-center h-40 text-gray-600 text-sm">
+      <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
         No data
       </div>
     );
@@ -28,17 +28,17 @@ export function PnLByTimeOfDay({ data }: Props) {
   return (
     <ResponsiveContainer width="100%" height={180}>
       <BarChart data={formatted} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-        <XAxis dataKey="label" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={60}
+        <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} width={60}
           tickFormatter={(v) => `$${v}`} />
         <Tooltip
-          contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }}
-          labelStyle={{ color: '#9ca3af', fontSize: 11 }}
+          contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+          labelStyle={{ color: '#6b7280', fontSize: 11 }}
           formatter={(v) => [`$${Number(v).toFixed(2)}`, 'P&L']}
         />
         <Bar dataKey="total_pnl" radius={[4, 4, 0, 0]}>
           {formatted.map((entry, i) => (
-            <Cell key={i} fill={entry.total_pnl >= 0 ? '#10b981' : '#ef4444'} />
+            <Cell key={i} fill={entry.total_pnl >= 0 ? '#059669' : '#dc2626'} />
           ))}
         </Bar>
       </BarChart>

@@ -13,6 +13,8 @@ const TIMEZONES = [
   'America/Los_Angeles',
   'Europe/London',
   'Europe/Berlin',
+  'Asia/Bangkok',
+  'Asia/Singapore',
   'Asia/Tokyo',
   'Asia/Sydney',
 ];
@@ -60,21 +62,23 @@ export function SettingsForm({ userId, initialDisplayName, initialTimezone }: Pr
         placeholder="Your name"
       />
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-300">Timezone</label>
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Timezone</label>
         <select
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
         >
           {TIMEZONES.map((tz) => (
             <option key={tz} value={tz}>{tz}</option>
           ))}
         </select>
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex items-center gap-3">
-        <Button type="submit" loading={saving}>Save Changes</Button>
-        {saved && <span className="text-sm text-emerald-400">Saved!</span>}
+        <Button type="submit" loading={saving}>
+          {!saving && <i className="lni lni-floppy-disk-1 text-sm" />}Save Changes
+        </Button>
+        {saved && <span className="text-sm text-emerald-600 flex items-center gap-1"><i className="lni lni-check" />Saved!</span>}
       </div>
     </form>
   );

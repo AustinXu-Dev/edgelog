@@ -2,12 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Lineicons font */
+@font-face {
+  font-family: 'Lineicons';
+  src: url('/fonts/lineicons/d495aba62101f856c80f.eot');
+  src: url('/fonts/lineicons/d495aba62101f856c80f.eot') format('embedded-opentype'),
+       url('/fonts/lineicons/9065bfe481020b04b68a.woff2') format('woff2'),
+       url('/fonts/lineicons/68caad34b1e80fa12b3a.woff') format('woff'),
+       url('/fonts/lineicons/a9c9056a643325579e2a.ttf') format('truetype');
+}
+
+.lni {
+  display: inline-block;
+  font: normal normal normal 1em/1 'Lineicons';
+  color: inherit;
+  flex-shrink: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-  @apply bg-gray-950 text-gray-100;
+  @apply bg-white text-gray-900;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .page-enter {
+    animation: pageEnter 0.18s ease-out;
+  }
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

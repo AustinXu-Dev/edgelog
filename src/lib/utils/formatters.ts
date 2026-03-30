@@ -40,8 +40,8 @@ export function formatPnl(value: number | null): string {
 }
 
 export function pnlColor(value: number | null): string {
-  if (value === null || value === 0) return 'text-gray-400';
-  return value > 0 ? 'text-emerald-400' : 'text-red-400';
+  if (value === null || value === 0) return 'text-gray-500';
+  return value > 0 ? 'text-emerald-600' : 'text-red-600';
 }
 
 export function toInputDatetime(iso: string): string {

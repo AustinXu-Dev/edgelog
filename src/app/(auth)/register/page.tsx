@@ -29,23 +29,22 @@ export default function RegisterPage() {
     } else {
       setSuccess(true);
       setLoading(false);
-      // If email confirmation is disabled, redirect immediately
       setTimeout(() => router.push('/dashboard'), 1500);
     }
   }
 
   if (success) {
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-        <p className="text-emerald-400 font-medium">Account created!</p>
-        <p className="text-gray-400 text-sm mt-1">Redirecting you to the dashboard...</p>
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 text-center">
+        <p className="text-emerald-600 font-medium">Account created!</p>
+        <p className="text-gray-500 text-sm mt-1">Redirecting you to the dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
-      <h2 className="text-lg font-semibold text-gray-100 mb-6">Create account</h2>
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+      <h2 className="text-lg font-semibold text-gray-900 mb-6">Create account</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           label="Email"
@@ -66,14 +65,14 @@ export default function RegisterPage() {
           minLength={6}
           autoComplete="new-password"
         />
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
         <Button type="submit" loading={loading} className="w-full mt-2">
           Create account
         </Button>
       </form>
       <p className="text-sm text-gray-500 mt-4 text-center">
         Already have an account?{' '}
-        <Link href="/login" className="text-indigo-400 hover:text-indigo-300">
+        <Link href="/login" className="text-blue-600 hover:text-blue-700">
           Sign in
         </Link>
       </p>

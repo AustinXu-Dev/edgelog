@@ -24,8 +24,8 @@ export function MoodPicker({ value, onChange }: Props) {
           onClick={() => onChange(value === m.value ? null : m.value)}
           className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg border text-xs transition-colors ${
             value === m.value
-              ? 'border-indigo-500 bg-indigo-900/30 text-indigo-300'
-              : 'border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300'
+              ? 'border-blue-500 bg-blue-50 text-blue-700'
+              : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
           }`}
         >
           <span className="text-lg">{m.emoji}</span>

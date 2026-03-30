@@ -32,8 +32,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
-      <h2 className="text-lg font-semibold text-gray-100 mb-6">Sign in</h2>
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+      <h2 className="text-lg font-semibold text-gray-900 mb-6">Sign in</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           label="Email"
@@ -53,14 +53,14 @@ export default function LoginPage() {
           required
           autoComplete="current-password"
         />
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
         <Button type="submit" loading={loading} className="w-full mt-2">
           Sign in
         </Button>
       </form>
       <p className="text-sm text-gray-500 mt-4 text-center">
         No account?{' '}
-        <Link href="/register" className="text-indigo-400 hover:text-indigo-300">
+        <Link href="/register" className="text-blue-600 hover:text-blue-700">
           Sign up
         </Link>
       </p>

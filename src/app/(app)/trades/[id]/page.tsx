@@ -48,7 +48,7 @@ export default async function TradeDetailPage({ params }: PageProps) {
         actions={
           <div className="flex gap-2">
             <Link href={`/trades/${trade.id}/edit`}>
-              <Button variant="secondary" size="sm">Edit</Button>
+              <Button variant="secondary" size="sm"><i className="lni lni-pencil-1 text-sm" />Edit</Button>
             </Link>
             <DeleteTradeButton tradeId={trade.id} />
           </div>
@@ -60,40 +60,40 @@ export default async function TradeDetailPage({ params }: PageProps) {
           <Card title="Trade Details">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               <dt className="text-gray-500">Instrument</dt>
-              <dd className="text-gray-100 font-medium">{trade.instrument} ({trade.instrument_type})</dd>
+              <dd className="text-gray-900 font-medium">{trade.instrument} ({trade.instrument_type})</dd>
 
               <dt className="text-gray-500">Direction</dt>
-              <dd className={trade.direction === 'long' ? 'text-emerald-400 font-medium' : 'text-red-400 font-medium'}>
+              <dd className={trade.direction === 'long' ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>
                 {trade.direction === 'long' ? 'Long' : 'Short'}
               </dd>
 
               <dt className="text-gray-500">Entry</dt>
-              <dd className="text-gray-100">{trade.entry_price.toFixed(4)}</dd>
+              <dd className="text-gray-900 font-mono">{trade.entry_price.toFixed(4)}</dd>
 
               <dt className="text-gray-500">Exit</dt>
-              <dd className="text-gray-100">{trade.exit_price?.toFixed(4) ?? '—'}</dd>
+              <dd className="text-gray-900 font-mono">{trade.exit_price?.toFixed(4) ?? '—'}</dd>
 
               <dt className="text-gray-500">Size</dt>
-              <dd className="text-gray-100">{trade.position_size}</dd>
+              <dd className="text-gray-900 font-mono">{trade.position_size}</dd>
 
               <dt className="text-gray-500">Entry Time</dt>
-              <dd className="text-gray-300">{formatDatetime(trade.entry_datetime)}</dd>
+              <dd className="text-gray-700">{formatDatetime(trade.entry_datetime)}</dd>
 
               <dt className="text-gray-500">Exit Time</dt>
-              <dd className="text-gray-300">{trade.exit_datetime ? formatDatetime(trade.exit_datetime) : '—'}</dd>
+              <dd className="text-gray-700">{trade.exit_datetime ? formatDatetime(trade.exit_datetime) : '—'}</dd>
 
               <dt className="text-gray-500">Stop Loss</dt>
-              <dd className="text-gray-300">{trade.stop_loss_planned?.toFixed(4) ?? '—'}</dd>
+              <dd className="text-gray-700 font-mono">{trade.stop_loss_planned?.toFixed(4) ?? '—'}</dd>
 
               <dt className="text-gray-500">Take Profit</dt>
-              <dd className="text-gray-300">{trade.take_profit_planned?.toFixed(4) ?? '—'}</dd>
+              <dd className="text-gray-700 font-mono">{trade.take_profit_planned?.toFixed(4) ?? '—'}</dd>
 
               <dt className="text-gray-500">Commission</dt>
-              <dd className="text-gray-300">{formatCurrency(trade.commission)}</dd>
+              <dd className="text-gray-700 font-mono">{formatCurrency(trade.commission)}</dd>
 
               <dt className="text-gray-500">Status</dt>
               <dd>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${trade.status === 'closed' ? 'bg-gray-700 text-gray-300' : 'bg-emerald-900 text-emerald-300'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${trade.status === 'closed' ? 'bg-gray-100 text-gray-600' : 'bg-emerald-50 text-emerald-700'}`}>
                   {trade.status}
                 </span>
               </dd>
@@ -104,17 +104,17 @@ export default async function TradeDetailPage({ params }: PageProps) {
           <Card title="P&L Summary">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               <dt className="text-gray-500">Gross P&L</dt>
-              <dd className={`font-bold text-lg ${pnlColor(trade.gross_pnl)}`}>
+              <dd className={`font-bold text-lg font-mono ${pnlColor(trade.gross_pnl)}`}>
                 {trade.gross_pnl !== null ? formatCurrency(trade.gross_pnl) : '—'}
               </dd>
 
               <dt className="text-gray-500">Net P&L</dt>
-              <dd className={`font-bold text-2xl ${pnlColor(trade.net_pnl)}`}>
+              <dd className={`font-bold text-2xl font-mono ${pnlColor(trade.net_pnl)}`}>
                 {trade.net_pnl !== null ? formatCurrency(trade.net_pnl) : '—'}
               </dd>
 
               <dt className="text-gray-500">R-Multiple</dt>
-              <dd className={`font-bold text-lg ${pnlColor(trade.r_multiple)}`}>
+              <dd className={`font-bold text-lg font-mono ${pnlColor(trade.r_multiple)}`}>
                 {formatR(trade.r_multiple)}
               </dd>
             </dl>

@@ -1,5 +1,12 @@
 import type { Instrument, InstrumentType, Direction, TradeStatus } from '../types';
 
+export const POINT_VALUES: Record<string, number> = {
+  NQ: 20,
+  ES: 50,
+  NDX100: 20,
+  SPX500: 50,
+};
+
 export interface ParsedCsvTrade {
   instrument: Instrument;
   instrument_type: InstrumentType;
@@ -45,10 +52,12 @@ export function calcPnl(
   entryPrice: number,
   exitPrice: number,
   positionSize: number,
-  commission: number
+  commission: number,
+  instrument?: string
 ): { gross_pnl: number; net_pnl: number } {
-  const multiplier = direction === 'long' ? 1 : -1;
-  const gross_pnl = (exitPrice - entryPrice) * positionSize * multiplier;
+  const dirMultiplier = direction === 'long' ? 1 : -1;
+  const pointValue = instrument ? (POINT_VALUES[instrument] ?? 1) : 1;
+  const gross_pnl = (exitPrice - entryPrice) * positionSize * dirMultiplier * pointValue;
   const net_pnl = gross_pnl - commission;
   return { gross_pnl, net_pnl };
 }
@@ -58,10 +67,12 @@ export function calcRMultiple(
   entryPrice: number,
   stopLoss: number | null,
   netPnl: number,
-  positionSize: number
+  positionSize: number,
+  instrument?: string
 ): number | null {
   if (stopLoss === null) return null;
-  const risk = Math.abs(entryPrice - stopLoss) * positionSize;
+  const pointValue = instrument ? (POINT_VALUES[instrument] ?? 1) : 1;
+  const risk = Math.abs(entryPrice - stopLoss) * positionSize * pointValue;
   if (risk === 0) return null;
   return netPnl / risk;
 }
@@ -118,10 +129,10 @@ export function validateAndParseCsvRows(
     const resolvedStatus: TradeStatus = VALID_STATUSES.includes(status) ? status : 'closed';
 
     if (resolvedStatus === 'closed' && exit_price !== null) {
-      const pnl = calcPnl(direction as Direction, entry_price, exit_price, position_size, commission);
+      const pnl = calcPnl(direction as Direction, entry_price, exit_price, position_size, commission, instrument);
       gross_pnl = pnl.gross_pnl;
       net_pnl = pnl.net_pnl;
-      r_multiple = calcRMultiple(direction as Direction, entry_price, stop_loss_planned, net_pnl, position_size);
+      r_multiple = calcRMultiple(direction as Direction, entry_price, stop_loss_planned, net_pnl, position_size, instrument);
     }
 
     const instrument_type: InstrumentType = ['NQ', 'ES'].includes(instrument) ? 'futures' : 'index';

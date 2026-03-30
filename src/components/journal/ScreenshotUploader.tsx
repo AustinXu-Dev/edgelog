@@ -43,7 +43,6 @@ export function ScreenshotUploader({ tradeId, userId, existingUrl }: Props) {
 
     const screenshotUrl = signedData?.signedUrl ?? null;
 
-    // Save URL to trade journal entry
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase.from('trade_journal_entries').upsert(
@@ -59,7 +58,7 @@ export function ScreenshotUploader({ tradeId, userId, existingUrl }: Props) {
   return (
     <div className="space-y-3">
       {url && (
-        <div className="relative border border-gray-700 rounded-lg overflow-hidden">
+        <div className="relative border border-gray-200 rounded-lg overflow-hidden">
           <Image
             src={url}
             alt="Trade screenshot"
@@ -88,7 +87,7 @@ export function ScreenshotUploader({ tradeId, userId, existingUrl }: Props) {
             {url ? 'Replace Screenshot' : 'Upload Screenshot'}
           </Button>
         </label>
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
     </div>
   );

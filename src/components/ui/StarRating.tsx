@@ -16,7 +16,7 @@ export function StarRating({ value, onChange, readonly = false }: StarRatingProp
           disabled={readonly}
           onClick={() => onChange?.(star)}
           className={`text-xl transition-colors ${readonly ? 'cursor-default' : 'cursor-pointer hover:text-yellow-400'} ${
-            value !== null && star <= value ? 'text-yellow-400' : 'text-gray-600'
+            value !== null && star <= value ? 'text-yellow-400' : 'text-gray-300'
           }`}
           aria-label={`${star} star${star !== 1 ? 's' : ''}`}
         >

@@ -5,6 +5,15 @@ export interface Profile {
   created_at: string;
 }
 
+export interface TradingAccount {
+  id: string;
+  user_id: string;
+  name: string;
+  broker: string | null;
+  initial_balance: number;
+  created_at: string;
+}
+
 export type Instrument = 'NDX100' | 'SPX500' | 'NQ' | 'ES';
 export type InstrumentType = 'index' | 'futures';
 export type Direction = 'long' | 'short';
@@ -14,6 +23,7 @@ export type Mood = 'focused' | 'neutral' | 'anxious' | 'impulsive';
 export interface Trade {
   id: string;
   user_id: string;
+  account_id: string | null;
   instrument: Instrument;
   instrument_type: InstrumentType;
   direction: Direction;
@@ -67,6 +77,10 @@ export interface DailyJournal {
   content: string | null;
   mood: Mood | null;
   created_at: string;
+}
+
+export interface DailyJournalWithTrades extends DailyJournal {
+  linkedTrades: { id: string; instrument: string; direction: Direction; net_pnl: number | null }[];
 }
 
 export interface DashboardMetrics {
