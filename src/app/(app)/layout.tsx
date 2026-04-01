@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { BottomNav } from '@/components/layout/BottomNav';
+import { MobileAccountBar } from '@/components/layout/MobileAccountBar';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerClient();
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden page-enter pb-16 md:pb-0">
+        <MobileAccountBar activeAccountId={activeAccountId} />
         {children}
       </main>
 
