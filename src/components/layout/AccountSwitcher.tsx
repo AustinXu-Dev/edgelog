@@ -36,20 +36,13 @@ export function AccountSwitcher({ activeAccountId }: Props) {
       .then(({ data }) => setAccounts(data ?? []));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch cumulative P&L for the active account
+  // Fetch cumulative P&L for the active account via SQL SUM — avoids fetching all rows
   useEffect(() => {
     if (!activeAccountId) { setCumulativePnl(null); return; }
 
     supabase
-      .from('trades')
-      .select('net_pnl')
-      .eq('account_id', activeAccountId)
-      .eq('status', 'closed')
-      .not('net_pnl', 'is', null)
-      .then(({ data }) => {
-        const total = (data ?? []).reduce((s, t) => s + (t.net_pnl ?? 0), 0);
-        setCumulativePnl(total);
-      });
+      .rpc('get_account_pnl', { p_account_id: activeAccountId })
+      .then(({ data }) => setCumulativePnl(data ?? 0));
   }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSwitch(id: string | null) {

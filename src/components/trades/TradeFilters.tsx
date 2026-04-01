@@ -4,6 +4,12 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { INSTRUMENT_DEFINITIONS } from '@/lib/utils/csv';
+
+const INSTRUMENT_FILTER_OPTIONS = [
+  { value: '', label: 'All' },
+  ...INSTRUMENT_DEFINITIONS.map(({ value, shortLabel }) => ({ value, label: shortLabel })),
+];
 
 export function TradeFilters() {
   const router = useRouter();
@@ -28,43 +34,7 @@ export function TradeFilters() {
         label="Instrument"
         name="instrument"
         defaultValue={searchParams.get('instrument') ?? ''}
-        options={[
-          { value: '', label: 'All' },
-          // Futures
-          { value: 'NQ', label: 'NQ' },
-          { value: 'ES', label: 'ES' },
-          { value: 'MNQ', label: 'MNQ' },
-          { value: 'MES', label: 'MES' },
-          { value: 'YM', label: 'YM' },
-          { value: 'MYM', label: 'MYM' },
-          { value: 'RTY', label: 'RTY' },
-          { value: 'M2K', label: 'M2K' },
-          { value: 'GC', label: 'GC' },
-          { value: 'MGC', label: 'MGC' },
-          { value: 'SI', label: 'SI' },
-          { value: 'SIL', label: 'SIL' },
-          { value: 'PL', label: 'PL' },
-          { value: 'CL', label: 'CL' },
-          { value: 'MCL', label: 'MCL' },
-          // Index CFDs
-          { value: 'NDX100', label: 'NDX100' },
-          { value: 'SPX500', label: 'SPX500' },
-          { value: 'US30', label: 'US30' },
-          { value: 'GER40', label: 'GER40' },
-          // Commodity CFDs
-          { value: 'XAUUSD', label: 'XAU/USD' },
-          { value: 'XAGUSD', label: 'XAG/USD' },
-          // Forex
-          { value: 'EURUSD', label: 'EUR/USD' },
-          { value: 'GBPUSD', label: 'GBP/USD' },
-          { value: 'AUDUSD', label: 'AUD/USD' },
-          { value: 'NZDUSD', label: 'NZD/USD' },
-          { value: 'USDJPY', label: 'USD/JPY' },
-          { value: 'USDCAD', label: 'USD/CAD' },
-          // Crypto
-          { value: 'BTCUSD', label: 'BTC/USD' },
-          { value: 'ETHUSD', label: 'ETH/USD' },
-        ]}
+        options={INSTRUMENT_FILTER_OPTIONS}
         className="w-36"
       />
       <Select

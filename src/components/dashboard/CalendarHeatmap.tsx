@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
 
 interface Props {
@@ -79,15 +79,24 @@ export function CalendarHeatmap({ initialYear, initialMonth, accountId }: Props)
   const [dailyData, setDailyData] = useState<DailyData>({});
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
+  // Cache keyed by "YYYY-MM[-accountId]" — prevents re-fetching already viewed months
+  const monthCache = useRef<Map<string, DailyData>>(new Map());
 
   const fetchMonth = useCallback(async (y: number, m: number) => {
+    const cacheKey = `${y}-${String(m + 1).padStart(2, '0')}-${accountId ?? 'all'}`;
+
+    if (monthCache.current.has(cacheKey)) {
+      setDailyData(monthCache.current.get(cacheKey)!);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
     const start = `${y}-${String(m + 1).padStart(2, '0')}-01`;
-    const endDate = new Date(y, m + 1, 1);
-    const end = endDate.toISOString().slice(0, 10);
+    const end = new Date(y, m + 1, 1).toISOString().slice(0, 10);
 
     let query = supabase
       .from('trades')
@@ -113,6 +122,7 @@ export function CalendarHeatmap({ initialYear, initialMonth, accountId }: Props)
       else if (t.net_pnl < 0) result[date].losses += 1;
     }
 
+    monthCache.current.set(cacheKey, result);
     setDailyData(result);
     setLoading(false);
   }, [supabase, accountId]);
@@ -143,20 +153,25 @@ export function CalendarHeatmap({ initialYear, initialMonth, accountId }: Props)
   const weeks: (number | null)[][] = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
-  const weeklyTotals = weeks.map((week) =>
-    week.reduce<number | null>((sum, day) => {
-      if (day === null) return sum;
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const d = dailyData[dateStr];
-      if (!d) return sum;
-      return (sum ?? 0) + d.pnl;
-    }, null)
-  );
-
   const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-  const monthTotal = Object.entries(dailyData)
-    .filter(([d]) => d.startsWith(monthPrefix))
-    .reduce((s, [, v]) => s + v.pnl, 0);
+
+  const { weeklyTotals, monthTotal } = useMemo(() => {
+    const totals = weeks.map((week) =>
+      week.reduce<number | null>((sum, day) => {
+        if (day === null) return sum;
+        const dateStr = `${monthPrefix}-${String(day).padStart(2, '0')}`;
+        const d = dailyData[dateStr];
+        if (!d) return sum;
+        return (sum ?? 0) + d.pnl;
+      }, null)
+    );
+
+    const total = Object.entries(dailyData)
+      .filter(([d]) => d.startsWith(monthPrefix))
+      .reduce((s, [, v]) => s + v.pnl, 0);
+
+    return { weeklyTotals: totals, monthTotal: total };
+  }, [year, month, dailyData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const today = new Date();
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { PnLByHourRow } from '@/lib/types';
 
@@ -15,7 +16,10 @@ function formatHour(h: number) {
 }
 
 export function PnLByTimeOfDay({ data }: Props) {
-  const formatted = data.map((d) => ({ ...d, label: formatHour(d.hour) }));
+  const formatted = useMemo(
+    () => data.map((d) => ({ ...d, label: formatHour(d.hour) })),
+    [data]
+  );
 
   if (formatted.length === 0) {
     return (

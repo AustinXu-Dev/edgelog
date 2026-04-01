@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { getDashboardTrades } from '@/lib/db/dashboard';
 import { getRecentTrades } from '@/lib/db/trades';
 import {
@@ -12,14 +13,16 @@ import {
 import { formatCurrency, formatPercent, formatR } from '@/lib/utils/formatters';
 import { Topbar } from '@/components/layout/Topbar';
 import { MetricCard } from '@/components/dashboard/MetricCard';
-import { EquityCurve } from '@/components/dashboard/EquityCurve';
 import { CalendarHeatmap } from '@/components/dashboard/CalendarHeatmap';
-import { PnLByInstrument } from '@/components/dashboard/PnLByInstrument';
-import { PnLByDayOfWeek } from '@/components/dashboard/PnLByDayOfWeek';
-import { PnLByTimeOfDay } from '@/components/dashboard/PnLByTimeOfDay';
 import { RecentTradesTable } from '@/components/dashboard/RecentTradesTable';
 import { DashboardFilterToggle } from '@/components/dashboard/DashboardFilterToggle';
 import { Card } from '@/components/ui/Card';
+
+// Recharts is ~100KB gzipped — lazy-load so it doesn't block initial page render
+const EquityCurve     = dynamic(() => import('@/components/dashboard/EquityCurve').then(m => m.EquityCurve), { ssr: false });
+const PnLByInstrument = dynamic(() => import('@/components/dashboard/PnLByInstrument').then(m => m.PnLByInstrument), { ssr: false });
+const PnLByDayOfWeek  = dynamic(() => import('@/components/dashboard/PnLByDayOfWeek').then(m => m.PnLByDayOfWeek), { ssr: false });
+const PnLByTimeOfDay  = dynamic(() => import('@/components/dashboard/PnLByTimeOfDay').then(m => m.PnLByTimeOfDay), { ssr: false });
 
 interface PageProps {
   searchParams: { from?: string; to?: string };

@@ -56,33 +56,32 @@ export async function getTradeById(id: string): Promise<TradeWithDetails | null>
   } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // Single query — replaces 3 sequential round-trips
   const { data: trade } = await supabase
     .from('trades')
-    .select('*')
+    .select(`
+      *,
+      trade_tag_links(trade_tags(id, name, color, user_id)),
+      trade_journal_entries(*)
+    `)
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
 
   if (!trade) return null;
 
-  const { data: tagLinks } = await supabase
-    .from('trade_tag_links')
-    .select('tag_id, trade_tags(id, name, color, user_id)')
-    .eq('trade_id', id);
-
-  const { data: journal } = await supabase
-    .from('trade_journal_entries')
-    .select('*')
-    .eq('trade_id', id)
-    .single();
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tags = (tagLinks?.map((l: any) => l.trade_tags).filter(Boolean) ?? []) as import('../types').TradeTag[];
+  const tags = ((trade as any).trade_tag_links?.map((l: any) => l.trade_tags).filter(Boolean) ?? []) as import('../types').TradeTag[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const journal = (trade as any).trade_journal_entries?.[0] ?? null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  const { trade_tag_links: _tagLinks, trade_journal_entries: _journalEntries, ...tradeData } = trade as any;
 
   return {
-    ...trade,
+    ...tradeData,
     tags,
-    journal: journal ?? null,
+    journal,
   };
 }
 

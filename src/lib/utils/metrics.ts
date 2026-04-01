@@ -1,40 +1,31 @@
 import type { Trade, DashboardMetrics, EquityPoint, PnLByHourRow } from '../types';
 
 export function calcMetrics(trades: Trade[]): DashboardMetrics {
-  const closed = trades.filter((t) => t.status === 'closed' && t.net_pnl !== null);
+  let totalNetPnl = 0, grossProfit = 0, grossLoss = 0, rSum = 0;
+  let tradeCount = 0, winCount = 0, lossCount = 0, rCount = 0;
 
-  if (closed.length === 0) {
-    return {
-      totalNetPnl: 0,
-      winRate: 0,
-      profitFactor: 0,
-      avgRMultiple: 0,
-      tradeCount: 0,
-      winCount: 0,
-      lossCount: 0,
-    };
+  // Single pass — replaces 7 separate filter/reduce/map calls
+  for (const t of trades) {
+    if (t.status !== 'closed' || t.net_pnl === null) continue;
+    tradeCount++;
+    totalNetPnl += t.net_pnl;
+    if (t.net_pnl > 0) { winCount++; grossProfit += t.net_pnl; }
+    else if (t.net_pnl < 0) { lossCount++; grossLoss += Math.abs(t.net_pnl); }
+    if (t.r_multiple !== null) { rSum += t.r_multiple; rCount++; }
   }
 
-  const wins = closed.filter((t) => (t.net_pnl ?? 0) > 0);
-  const losses = closed.filter((t) => (t.net_pnl ?? 0) < 0);
-
-  const totalNetPnl = closed.reduce((sum, t) => sum + (t.net_pnl ?? 0), 0);
-  const grossProfit = wins.reduce((sum, t) => sum + (t.net_pnl ?? 0), 0);
-  const grossLoss = Math.abs(losses.reduce((sum, t) => sum + (t.net_pnl ?? 0), 0));
-
-  const profitFactor = grossLoss === 0 ? (grossProfit > 0 ? Infinity : 0) : grossProfit / grossLoss;
-
-  const rValues = closed.filter((t) => t.r_multiple !== null).map((t) => t.r_multiple!);
-  const avgRMultiple = rValues.length > 0 ? rValues.reduce((a, b) => a + b, 0) / rValues.length : 0;
+  if (tradeCount === 0) {
+    return { totalNetPnl: 0, winRate: 0, profitFactor: 0, avgRMultiple: 0, tradeCount: 0, winCount: 0, lossCount: 0 };
+  }
 
   return {
     totalNetPnl,
-    winRate: closed.length > 0 ? (wins.length / closed.length) * 100 : 0,
-    profitFactor,
-    avgRMultiple,
-    tradeCount: closed.length,
-    winCount: wins.length,
-    lossCount: losses.length,
+    winRate: (winCount / tradeCount) * 100,
+    profitFactor: grossLoss === 0 ? (grossProfit > 0 ? Infinity : 0) : grossProfit / grossLoss,
+    avgRMultiple: rCount > 0 ? rSum / rCount : 0,
+    tradeCount,
+    winCount,
+    lossCount,
   };
 }
 

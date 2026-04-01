@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   if (to) query = query.lte('entry_datetime', to + 'T23:59:59Z');
   if (activeAccountId) query = query.eq('account_id', activeAccountId);
 
-  const { data: trades, error } = await query;
+  const { data: trades, error } = await query.limit(50000);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
     headers: {
       'Content-Type': 'text/csv',
       'Content-Disposition': `attachment; filename="trades-${new Date().toISOString().slice(0, 10)}.csv"`,
+      'Cache-Control': 'no-store',
     },
   });
 }

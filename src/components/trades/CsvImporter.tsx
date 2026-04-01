@@ -26,12 +26,14 @@ export function CsvImporter() {
   const [importError, setImportError] = useState('');
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       if (pollRef.current) clearTimeout(pollRef.current);
+      abortRef.current?.abort();
     };
   }, []);
 
@@ -56,27 +58,36 @@ export function CsvImporter() {
     pollRef.current = setTimeout(async () => {
       if (!mountedRef.current) return;
 
-      const res = await fetch(`/api/jobs/${jobId}`);
-      if (!res.ok) {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const res = await fetch(`/api/jobs/${jobId}`, { signal: controller.signal });
+        if (!res.ok) {
+          setImportError('Failed to check import status');
+          setLoading(false);
+          return;
+        }
+
+        const data: Job = await res.json();
+        if (!mountedRef.current) return;
+
+        setJob(data);
+
+        if (data.status === 'completed') {
+          setPreview(null);
+          if (fileRef.current) fileRef.current.value = '';
+          setLoading(false);
+        } else if (data.status === 'failed') {
+          setImportError(data.error ?? 'Import failed');
+          setLoading(false);
+        } else {
+          pollJob(jobId);
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         setImportError('Failed to check import status');
         setLoading(false);
-        return;
-      }
-
-      const data: Job = await res.json();
-      if (!mountedRef.current) return;
-
-      setJob(data);
-
-      if (data.status === 'completed') {
-        setPreview(null);
-        if (fileRef.current) fileRef.current.value = '';
-        setLoading(false);
-      } else if (data.status === 'failed') {
-        setImportError(data.error ?? 'Import failed');
-        setLoading(false);
-      } else {
-        pollJob(jobId);
       }
     }, 2000);
   }
@@ -87,10 +98,14 @@ export function CsvImporter() {
     setImportError('');
     setJob(null);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     const response = await fetch('/api/trades/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ trades: preview }),
+      signal: controller.signal,
     });
 
     const data = await response.json();
