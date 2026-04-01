@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { getDashboardTrades } from '@/lib/db/dashboard';
-import { getTrades } from '@/lib/db/trades';
+import { getRecentTrades } from '@/lib/db/trades';
 import {
   calcMetrics,
   buildEquityCurve,
@@ -31,7 +32,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const [trades, recentTrades] = await Promise.all([
     getDashboardTrades(from, to, activeAccountId),
-    getTrades(undefined, undefined, activeAccountId),
+    getRecentTrades(10, activeAccountId),
   ]);
 
   const metrics = calcMetrics(trades);
@@ -104,8 +105,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               accountId={activeAccountId}
             />
           </Card>
-          <Card title="Recent Trades">
-            <RecentTradesTable trades={recentTrades.slice(0, 10)} />
+          <Card
+            title="Recent Trades"
+            action={<Link href="/trades" className="text-xs text-blue-600 hover:underline">View all</Link>}
+          >
+            <RecentTradesTable trades={recentTrades} />
           </Card>
         </div>
 

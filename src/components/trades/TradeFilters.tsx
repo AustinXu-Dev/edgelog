@@ -41,6 +41,9 @@ export function TradeFilters() {
           { value: 'M2K', label: 'M2K' },
           { value: 'GC', label: 'GC' },
           { value: 'MGC', label: 'MGC' },
+          { value: 'SI', label: 'SI' },
+          { value: 'SIL', label: 'SIL' },
+          { value: 'PL', label: 'PL' },
           { value: 'CL', label: 'CL' },
           { value: 'MCL', label: 'MCL' },
           // Index CFDs
@@ -48,6 +51,9 @@ export function TradeFilters() {
           { value: 'SPX500', label: 'SPX500' },
           { value: 'US30', label: 'US30' },
           { value: 'GER40', label: 'GER40' },
+          // Commodity CFDs
+          { value: 'XAUUSD', label: 'XAU/USD' },
+          { value: 'XAGUSD', label: 'XAG/USD' },
           // Forex
           { value: 'EURUSD', label: 'EUR/USD' },
           { value: 'GBPUSD', label: 'GBP/USD' },

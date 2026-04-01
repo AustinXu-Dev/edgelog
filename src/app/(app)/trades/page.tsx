@@ -5,7 +5,10 @@ import { TradeTable } from '@/components/trades/TradeTable';
 import { TradeFilters } from '@/components/trades/TradeFilters';
 import { Topbar } from '@/components/layout/Topbar';
 import { Button } from '@/components/ui/Button';
+import { Pagination } from '@/components/ui/Pagination';
 import type { Trade } from '@/lib/types';
+
+const PAGE_SIZE = 10;
 
 interface PageProps {
   searchParams: {
@@ -14,6 +17,7 @@ interface PageProps {
     status?: string;
     from?: string;
     to?: string;
+    page?: string;
   };
 }
 
@@ -25,13 +29,17 @@ export default async function TradesPage({ searchParams }: PageProps) {
 
   if (!user) return null;
 
-  let query = supabase
-    .from('trades')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('entry_datetime', { ascending: false });
+  const page = Math.max(1, parseInt(searchParams.page ?? '1', 10));
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   const activeAccountId = cookies().get('active_account_id')?.value ?? null;
+
+  let query = supabase
+    .from('trades')
+    .select('*', { count: 'exact' })
+    .eq('user_id', user.id)
+    .order('entry_datetime', { ascending: false });
 
   if (searchParams.instrument) query = query.eq('instrument', searchParams.instrument);
   if (searchParams.direction) query = query.eq('direction', searchParams.direction);
@@ -40,7 +48,17 @@ export default async function TradesPage({ searchParams }: PageProps) {
   if (searchParams.to) query = query.lte('entry_datetime', searchParams.to + 'T23:59:59Z');
   if (activeAccountId) query = query.eq('account_id', activeAccountId);
 
-  const { data: trades } = await query;
+  const { data: trades, count } = await query.range(from, to);
+
+  const totalCount = count ?? 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  const filterParams = Object.fromEntries(
+    Object.entries(searchParams)
+      .filter(([k, v]) => k !== 'page' && v !== undefined)
+  ) as Record<string, string>;
+
+  const exportParams = new URLSearchParams(filterParams).toString();
 
   return (
     <div className="flex flex-col h-full">
@@ -58,14 +76,15 @@ export default async function TradesPage({ searchParams }: PageProps) {
         </div>
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-gray-500">{trades?.length ?? 0} trades</p>
+            <p className="text-sm text-gray-500">
+              {totalCount} trade{totalCount !== 1 ? 's' : ''}
+              {totalPages > 1 && (
+                <span className="text-gray-400"> — page {page} of {totalPages}</span>
+              )}
+            </p>
             <div className="flex items-center gap-2">
-              {(trades?.length ?? 0) > 0 && (
-                <a href={`/api/trades/export?${new URLSearchParams(
-                  Object.fromEntries(
-                    Object.entries(searchParams).filter(([, v]) => v !== undefined)
-                  ) as Record<string, string>
-                ).toString()}`}>
+              {totalCount > 0 && (
+                <a href={`/api/trades/export${exportParams ? `?${exportParams}` : ''}`}>
                   <Button variant="secondary" size="sm"><i className="lni lni-download text-sm" />Export CSV</Button>
                 </a>
               )}
@@ -75,6 +94,7 @@ export default async function TradesPage({ searchParams }: PageProps) {
             </div>
           </div>
           <TradeTable trades={(trades as Trade[]) ?? []} />
+          <Pagination page={page} totalPages={totalPages} basePath="/trades" filterParams={filterParams} />
         </div>
       </div>
     </div>

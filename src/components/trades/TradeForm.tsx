@@ -27,9 +27,13 @@ const INSTRUMENTS = [
   { value: 'MYM', label: 'MYM — Micro Dow' },
   { value: 'RTY', label: 'RTY — Russell 2000' },
   { value: 'M2K', label: 'M2K — Micro Russell 2000' },
-  // ── CME Commodity Futures ───────────────────
+  // ── CME Metals Futures ──────────────────────
   { value: 'GC', label: 'GC — Gold Futures' },
   { value: 'MGC', label: 'MGC — Micro Gold' },
+  { value: 'SI', label: 'SI — Silver Futures' },
+  { value: 'SIL', label: 'SIL — Micro Silver' },
+  { value: 'PL', label: 'PL — Platinum Futures' },
+  // ── CME Energy Futures ──────────────────────
   { value: 'CL', label: 'CL — Crude Oil' },
   { value: 'MCL', label: 'MCL — Micro Crude Oil' },
   // ── Index CFDs ──────────────────────────────
@@ -37,6 +41,9 @@ const INSTRUMENTS = [
   { value: 'SPX500', label: 'SPX500 — S&P 500 CFD' },
   { value: 'US30', label: 'US30 — Dow Jones CFD' },
   { value: 'GER40', label: 'GER40 — DAX 40 CFD' },
+  // ── Commodity CFDs ──────────────────────────
+  { value: 'XAUUSD', label: 'XAU/USD — Gold CFD' },
+  { value: 'XAGUSD', label: 'XAG/USD — Silver CFD' },
   // ── Forex ───────────────────────────────────
   { value: 'EURUSD', label: 'EUR/USD' },
   { value: 'GBPUSD', label: 'GBP/USD' },

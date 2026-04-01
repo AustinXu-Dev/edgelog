@@ -11,9 +11,13 @@ export const POINT_VALUES: Record<string, number> = {
   MYM: 0.5,     // Micro E-mini Dow ($0.50/pt)
   RTY: 50,      // E-mini Russell 2000 ($50/pt)
   M2K: 5,       // Micro E-mini Russell 2000 ($5/pt)
-  // CME Commodity Futures
+  // CME Metals Futures
   GC: 100,      // Gold — 100 troy oz ($100/pt)
   MGC: 10,      // Micro Gold — 10 troy oz ($10/pt)
+  SI: 5000,     // Silver — 5,000 troy oz ($5,000/pt)
+  SIL: 1000,    // Micro Silver — 1,000 troy oz ($1,000/pt)
+  PL: 50,       // Platinum — 50 troy oz ($50/pt)
+  // CME Energy Futures
   CL: 1000,     // Crude Oil — 1,000 barrels ($1,000/pt)
   MCL: 100,     // Micro Crude Oil — 100 barrels ($100/pt)
   // Index CFDs
@@ -21,6 +25,9 @@ export const POINT_VALUES: Record<string, number> = {
   SPX500: 50,   // S&P 500 CFD (mirrors ES spec)
   US30: 1,      // Dow Jones CFD ($1/pt)
   GER40: 1,     // DAX 40 CFD (EUR-denominated — P&L approximate in USD)
+  // Commodity CFDs — position_size in standard lots
+  XAUUSD: 100,  // Gold/USD CFD — 1 lot = 100 troy oz ($100/pt)
+  XAGUSD: 5000, // Silver/USD CFD — 1 lot = 5,000 troy oz ($5,000/pt)
   // Forex — position_size in standard lots (1 lot = 100,000 base units)
   // USD-quoted pairs (exact)
   EURUSD: 100000,
@@ -35,7 +42,7 @@ export const POINT_VALUES: Record<string, number> = {
   ETHUSD: 1,
 };
 
-const FUTURES_SET = new Set(['NQ', 'ES', 'MNQ', 'MES', 'YM', 'MYM', 'RTY', 'M2K', 'GC', 'MGC', 'CL', 'MCL']);
+const FUTURES_SET = new Set(['NQ', 'ES', 'MNQ', 'MES', 'YM', 'MYM', 'RTY', 'M2K', 'GC', 'MGC', 'SI', 'SIL', 'PL', 'CL', 'MCL']);
 const FOREX_SET = new Set(['EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDJPY', 'USDCAD']);
 const CRYPTO_SET = new Set(['BTCUSD', 'ETHUSD']);
 
