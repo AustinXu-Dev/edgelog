@@ -42,6 +42,48 @@ export const POINT_VALUES: Record<string, number> = {
   ETHUSD: 1,
 };
 
+// Single source of truth for all supported instruments.
+// label = full description used in TradeForm
+// shortLabel = ticker/display used in filter dropdowns
+export const INSTRUMENT_DEFINITIONS: { value: string; label: string; shortLabel: string }[] = [
+  // CME Equity Futures
+  { value: 'NQ',     label: 'NQ — E-mini Nasdaq-100',       shortLabel: 'NQ' },
+  { value: 'ES',     label: 'ES — E-mini S&P 500',           shortLabel: 'ES' },
+  { value: 'MNQ',    label: 'MNQ — Micro Nasdaq-100',        shortLabel: 'MNQ' },
+  { value: 'MES',    label: 'MES — Micro S&P 500',           shortLabel: 'MES' },
+  { value: 'YM',     label: 'YM — E-mini Dow',               shortLabel: 'YM' },
+  { value: 'MYM',    label: 'MYM — Micro Dow',               shortLabel: 'MYM' },
+  { value: 'RTY',    label: 'RTY — Russell 2000',             shortLabel: 'RTY' },
+  { value: 'M2K',    label: 'M2K — Micro Russell 2000',      shortLabel: 'M2K' },
+  // CME Metals Futures
+  { value: 'GC',     label: 'GC — Gold Futures',             shortLabel: 'GC' },
+  { value: 'MGC',    label: 'MGC — Micro Gold',              shortLabel: 'MGC' },
+  { value: 'SI',     label: 'SI — Silver Futures',           shortLabel: 'SI' },
+  { value: 'SIL',    label: 'SIL — Micro Silver',            shortLabel: 'SIL' },
+  { value: 'PL',     label: 'PL — Platinum Futures',         shortLabel: 'PL' },
+  // CME Energy Futures
+  { value: 'CL',     label: 'CL — Crude Oil',                shortLabel: 'CL' },
+  { value: 'MCL',    label: 'MCL — Micro Crude Oil',         shortLabel: 'MCL' },
+  // Index CFDs
+  { value: 'NDX100', label: 'NDX100 — Nasdaq-100 CFD',       shortLabel: 'NDX100' },
+  { value: 'SPX500', label: 'SPX500 — S&P 500 CFD',          shortLabel: 'SPX500' },
+  { value: 'US30',   label: 'US30 — Dow Jones CFD',          shortLabel: 'US30' },
+  { value: 'GER40',  label: 'GER40 — DAX 40 CFD',            shortLabel: 'GER40' },
+  // Commodity CFDs
+  { value: 'XAUUSD', label: 'XAU/USD — Gold CFD',            shortLabel: 'XAU/USD' },
+  { value: 'XAGUSD', label: 'XAG/USD — Silver CFD',          shortLabel: 'XAG/USD' },
+  // Forex
+  { value: 'EURUSD', label: 'EUR/USD',                       shortLabel: 'EUR/USD' },
+  { value: 'GBPUSD', label: 'GBP/USD',                       shortLabel: 'GBP/USD' },
+  { value: 'AUDUSD', label: 'AUD/USD',                       shortLabel: 'AUD/USD' },
+  { value: 'NZDUSD', label: 'NZD/USD',                       shortLabel: 'NZD/USD' },
+  { value: 'USDJPY', label: 'USD/JPY',                       shortLabel: 'USD/JPY' },
+  { value: 'USDCAD', label: 'USD/CAD',                       shortLabel: 'USD/CAD' },
+  // Crypto
+  { value: 'BTCUSD', label: 'BTC/USD',                       shortLabel: 'BTC/USD' },
+  { value: 'ETHUSD', label: 'ETH/USD',                       shortLabel: 'ETH/USD' },
+];
+
 const FUTURES_SET = new Set(['NQ', 'ES', 'MNQ', 'MES', 'YM', 'MYM', 'RTY', 'M2K', 'GC', 'MGC', 'SI', 'SIL', 'PL', 'CL', 'MCL']);
 const FOREX_SET = new Set(['EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDJPY', 'USDCAD']);
 const CRYPTO_SET = new Set(['BTCUSD', 'ETHUSD']);

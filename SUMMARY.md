@@ -71,7 +71,7 @@ src/app/
 
 ### 1. Dashboard
 
-The dashboard (`/dashboard`) is a Server Component that fetches all closed trades and computes analytics entirely on the server.
+The dashboard (`/dashboard`) is a Server Component that fetches all closed trades and computes analytics entirely on the server. Trade data is cached for 5 minutes via `unstable_cache` (tag: `dashboard-trades`).
 
 **KPI Metrics:**
 - Total Net P&L
@@ -79,13 +79,13 @@ The dashboard (`/dashboard`) is a Server Component that fetches all closed trade
 - Profit Factor (gross profit / gross loss)
 - Average R-Multiple
 
-**Charts (via Recharts):**
+**Charts (via Recharts — lazy-loaded with `next/dynamic`):**
 - **Equity Curve** — cumulative net P&L over time
 - **P&L by Instrument** — bar chart per instrument
 - **P&L by Day of Week** — Mon–Fri breakdown
 - **P&L by Time of Day** — hour-of-day breakdown
-- **Monthly P&L Calendar (Heatmap)** — color-coded daily P&L, paginated by month
-- **Recent Trades Table** — last 10 trades with click-to-navigate rows
+- **Monthly P&L Calendar (Heatmap)** — color-coded daily P&L, paginated by month. Previously fetched months are cached client-side in a `useRef<Map>` — no re-fetch on back navigation.
+- **Recent Trades Table** — last 10 trades fetched with `.limit(10)` at the DB level. "View all" link goes to `/trades`.
 
 **Date Range Filter:** hidden by default. The `DashboardFilterToggle` client component reveals a `DateRangePicker` that appends `?from=&to=` query params, causing the page to re-render with filtered data.
 
@@ -95,6 +95,7 @@ The dashboard (`/dashboard`) is a Server Component that fetches all closed trade
 
 **Trade List (`/trades`):**
 - Filterable by instrument, direction, status, and date range.
+- Server-side pagination — 10 trades per page using Supabase `.range()` with `count: 'exact'`. Page is a `page` search param preserved alongside filters.
 - Responsive: card view on mobile, full table on desktop.
 - Each row/card is clickable and navigates to the trade detail page.
 
@@ -103,7 +104,7 @@ The dashboard (`/dashboard`) is a Server Component that fetches all closed trade
 - P&L Summary panel: gross P&L, net P&L, R-multiple.
 - Inline **tag management** via `TagSelector`.
 - Inline **trade journal** (notes, star rating 1–5, strategy, screenshot upload).
-- Edit and Delete actions in the topbar.
+- Back, Edit, and Delete actions in the topbar.
 
 **Create Trade (`/trades/new`):**
 - Manual form for all trade fields.
@@ -218,9 +219,9 @@ Trade deduplication key: `(user_id, instrument, entry_datetime)`.
 
 | File | Responsibility |
 |---|---|
-| `trades.ts` | `getTrades`, `getTradeById`, `createTrade`, `updateTrade`, `deleteTrade` |
-| `dashboard.ts` | `getDashboardTrades` — closed trades with optional date/account filter |
-| `journal.ts` | Daily journal CRUD, trade journal dates, trade links |
+| `trades.ts` | `getTrades`, `getTradeById` (single query with nested select), `getRecentTrades` (DB-limited), `createTrade`, `updateTrade`, `deleteTrade` |
+| `dashboard.ts` | `getDashboardTrades` — closed trades with optional date/account filter, wrapped in `unstable_cache` (5 min, tag `dashboard-trades`) |
+| `journal.ts` | Daily journal CRUD, `getTradeJournalDates` (via SQL `GROUP BY` RPC), trade links |
 | `tags.ts` | Tag CRUD |
 | `accounts.ts` | Account queries |
 
@@ -314,6 +315,34 @@ P&L is computed client-side (for CSV preview) and server-side (on import/save) u
 - Page padding: `p-4 md:p-6`.
 
 ---
+
+## Performance & Architecture Decisions
+
+### Database
+
+- **Composite indexes** on `trades(user_id, account_id, entry_datetime DESC)` and `trades(user_id, account_id, status)` cover all common query patterns.
+- **`get_account_pnl(uuid)`** — SQL function returning `SUM(net_pnl)` for an account. Used by `AccountSwitcher` to avoid fetching all trade rows into JS.
+- **`get_trade_journal_dates()`** — SQL function returning `{ date, count }` via `GROUP BY`. Used by `getTradeJournalDates` to avoid JS-side aggregation.
+- **`getTradeById`** — single Supabase query with nested select for tags and journal (was 3 sequential round-trips).
+
+### Server Caching
+
+- `getDashboardTrades` is wrapped in `unstable_cache` (5-min TTL, `dashboard-trades` tag). The cached function uses the service-role client and takes `userId` as an explicit key so each user has their own cache slot.
+
+### Client Performance
+
+- Recharts is lazy-loaded via `next/dynamic({ ssr: false })` — the chart bundle doesn't block the initial dashboard render.
+- `CalendarHeatmap` caches fetched months in a `useRef<Map>` — no redundant DB fetches when navigating between months.
+- `CsvImporter` attaches `AbortController` signals to all fetch calls and aborts on unmount.
+
+### Instrument Definitions
+
+- **Single source of truth**: `INSTRUMENT_DEFINITIONS` in `src/lib/utils/csv.ts` — `{ value, label, shortLabel }` per instrument. All dropdowns (`TradeForm`, `TradeFilters`) derive from this array. Adding a new instrument requires a change in one place only.
+
+### Pagination
+
+- Trades list: server-side, 10 rows/page, Supabase `.range()` + `count: 'exact'`. `Pagination` component in `src/components/ui/Pagination.tsx`.
+- Dashboard recent trades: DB-level `.limit(10)` via `getRecentTrades`, no pagination widget.
 
 ## Environment Variables
 

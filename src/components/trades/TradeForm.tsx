@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { calcPnl, calcRMultiple, getInstrumentType } from '@/lib/utils/csv';
+import { calcPnl, calcRMultiple, getInstrumentType, INSTRUMENT_DEFINITIONS } from '@/lib/utils/csv';
 import { Badge } from '@/components/ui/Badge';
 import type { Trade, Instrument, Direction, TradeStatus, TradeTag, TradingAccount } from '@/lib/types';
 
@@ -17,44 +17,7 @@ interface TradeFormProps {
   initialAccountId?: string | null;
 }
 
-const INSTRUMENTS = [
-  // ── CME Equity Futures ──────────────────────
-  { value: 'NQ', label: 'NQ — E-mini Nasdaq-100' },
-  { value: 'ES', label: 'ES — E-mini S&P 500' },
-  { value: 'MNQ', label: 'MNQ — Micro Nasdaq-100' },
-  { value: 'MES', label: 'MES — Micro S&P 500' },
-  { value: 'YM', label: 'YM — E-mini Dow' },
-  { value: 'MYM', label: 'MYM — Micro Dow' },
-  { value: 'RTY', label: 'RTY — Russell 2000' },
-  { value: 'M2K', label: 'M2K — Micro Russell 2000' },
-  // ── CME Metals Futures ──────────────────────
-  { value: 'GC', label: 'GC — Gold Futures' },
-  { value: 'MGC', label: 'MGC — Micro Gold' },
-  { value: 'SI', label: 'SI — Silver Futures' },
-  { value: 'SIL', label: 'SIL — Micro Silver' },
-  { value: 'PL', label: 'PL — Platinum Futures' },
-  // ── CME Energy Futures ──────────────────────
-  { value: 'CL', label: 'CL — Crude Oil' },
-  { value: 'MCL', label: 'MCL — Micro Crude Oil' },
-  // ── Index CFDs ──────────────────────────────
-  { value: 'NDX100', label: 'NDX100 — Nasdaq-100 CFD' },
-  { value: 'SPX500', label: 'SPX500 — S&P 500 CFD' },
-  { value: 'US30', label: 'US30 — Dow Jones CFD' },
-  { value: 'GER40', label: 'GER40 — DAX 40 CFD' },
-  // ── Commodity CFDs ──────────────────────────
-  { value: 'XAUUSD', label: 'XAU/USD — Gold CFD' },
-  { value: 'XAGUSD', label: 'XAG/USD — Silver CFD' },
-  // ── Forex ───────────────────────────────────
-  { value: 'EURUSD', label: 'EUR/USD' },
-  { value: 'GBPUSD', label: 'GBP/USD' },
-  { value: 'AUDUSD', label: 'AUD/USD' },
-  { value: 'NZDUSD', label: 'NZD/USD' },
-  { value: 'USDJPY', label: 'USD/JPY' },
-  { value: 'USDCAD', label: 'USD/CAD' },
-  // ── Crypto ──────────────────────────────────
-  { value: 'BTCUSD', label: 'BTC/USD' },
-  { value: 'ETHUSD', label: 'ETH/USD' },
-];
+const INSTRUMENTS = INSTRUMENT_DEFINITIONS.map(({ value, label }) => ({ value, label }));
 
 const DIRECTIONS = [
   { value: 'long', label: 'Long' },

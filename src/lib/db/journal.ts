@@ -44,26 +44,12 @@ export async function getTradeJournalDates(): Promise<{ date: string; count: num
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data } = await supabase
-    .from('trade_journal_entries')
-    .select('trades!inner(entry_datetime)')
-    .eq('user_id', user.id);
-
-  if (!data) return [];
-
-  const dateMap: Record<string, number> = {};
-  for (const row of data) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dt: string | undefined = (row as any).trades?.entry_datetime;
-    if (dt) {
-      const date = dt.slice(0, 10);
-      dateMap[date] = (dateMap[date] ?? 0) + 1;
-    }
-  }
-
-  return Object.entries(dateMap)
-    .map(([date, count]) => ({ date, count }))
-    .sort((a, b) => b.date.localeCompare(a.date));
+  // SQL GROUP BY via RPC — single aggregated result instead of all rows in JS
+  const { data } = await supabase.rpc('get_trade_journal_dates');
+  return (data ?? []).map((r: { date: string; count: number }) => ({
+    date: r.date,
+    count: Number(r.count),
+  }));
 }
 
 // Daily journal trade links

@@ -24,5 +24,7 @@ export async function GET(
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
   }
 
-  return NextResponse.json(job);
+  return NextResponse.json(job, {
+    headers: { 'Cache-Control': 'no-store' },
+  });
 }
