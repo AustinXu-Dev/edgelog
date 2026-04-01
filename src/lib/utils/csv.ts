@@ -1,11 +1,50 @@
+import * as Sentry from '@sentry/nextjs';
 import type { Instrument, InstrumentType, Direction, TradeStatus } from '../types';
 
 export const POINT_VALUES: Record<string, number> = {
-  NQ: 20,
-  ES: 50,
-  NDX100: 20,
-  SPX500: 50,
+  // CME Equity Futures
+  NQ: 20,       // E-mini Nasdaq-100 ($20/pt)
+  ES: 50,       // E-mini S&P 500 ($50/pt)
+  MNQ: 2,       // Micro E-mini Nasdaq-100 ($2/pt)
+  MES: 5,       // Micro E-mini S&P 500 ($5/pt)
+  YM: 5,        // E-mini Dow ($5/pt)
+  MYM: 0.5,     // Micro E-mini Dow ($0.50/pt)
+  RTY: 50,      // E-mini Russell 2000 ($50/pt)
+  M2K: 5,       // Micro E-mini Russell 2000 ($5/pt)
+  // CME Commodity Futures
+  GC: 100,      // Gold — 100 troy oz ($100/pt)
+  MGC: 10,      // Micro Gold — 10 troy oz ($10/pt)
+  CL: 1000,     // Crude Oil — 1,000 barrels ($1,000/pt)
+  MCL: 100,     // Micro Crude Oil — 100 barrels ($100/pt)
+  // Index CFDs
+  NDX100: 20,   // Nasdaq-100 CFD (mirrors NQ spec)
+  SPX500: 50,   // S&P 500 CFD (mirrors ES spec)
+  US30: 1,      // Dow Jones CFD ($1/pt)
+  GER40: 1,     // DAX 40 CFD (EUR-denominated — P&L approximate in USD)
+  // Forex — position_size in standard lots (1 lot = 100,000 base units)
+  // USD-quoted pairs (exact)
+  EURUSD: 100000,
+  GBPUSD: 100000,
+  AUDUSD: 100000,
+  NZDUSD: 100000,
+  // Non-USD-quoted pairs (approximate — varies with exchange rate)
+  USDJPY: 700,    // ~100,000 / 143 USD/JPY
+  USDCAD: 74000,  // ~100,000 / 1.35 USD/CAD
+  // Crypto — position_size in coins, P&L in USD
+  BTCUSD: 1,
+  ETHUSD: 1,
 };
+
+const FUTURES_SET = new Set(['NQ', 'ES', 'MNQ', 'MES', 'YM', 'MYM', 'RTY', 'M2K', 'GC', 'MGC', 'CL', 'MCL']);
+const FOREX_SET = new Set(['EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDJPY', 'USDCAD']);
+const CRYPTO_SET = new Set(['BTCUSD', 'ETHUSD']);
+
+export function getInstrumentType(instrument: string): InstrumentType {
+  if (FUTURES_SET.has(instrument)) return 'futures';
+  if (FOREX_SET.has(instrument)) return 'forex';
+  if (CRYPTO_SET.has(instrument)) return 'crypto';
+  return 'index';
+}
 
 export interface ParsedCsvTrade {
   instrument: Instrument;
@@ -30,7 +69,7 @@ export interface CsvParseError {
   message: string;
 }
 
-const VALID_INSTRUMENTS = ['NDX100', 'SPX500', 'NQ', 'ES'];
+const VALID_INSTRUMENTS = Object.keys(POINT_VALUES);
 const VALID_DIRECTIONS = ['long', 'short'];
 const VALID_STATUSES = ['open', 'closed'];
 
@@ -57,6 +96,12 @@ export function calcPnl(
 ): { gross_pnl: number; net_pnl: number } {
   const dirMultiplier = direction === 'long' ? 1 : -1;
   const pointValue = instrument ? (POINT_VALUES[instrument] ?? 1) : 1;
+  if (instrument && !POINT_VALUES[instrument]) {
+    Sentry.captureMessage(`Unknown instrument in calcPnl: ${instrument}`, {
+      level: 'warning',
+      extra: { instrument, direction, entryPrice, exitPrice, positionSize },
+    });
+  }
   const gross_pnl = (exitPrice - entryPrice) * positionSize * dirMultiplier * pointValue;
   const net_pnl = gross_pnl - commission;
   return { gross_pnl, net_pnl };
@@ -135,7 +180,7 @@ export function validateAndParseCsvRows(
       r_multiple = calcRMultiple(direction as Direction, entry_price, stop_loss_planned, net_pnl, position_size, instrument);
     }
 
-    const instrument_type: InstrumentType = ['NQ', 'ES'].includes(instrument) ? 'futures' : 'index';
+    const instrument_type: InstrumentType = getInstrumentType(instrument);
 
     trades.push({
       instrument: instrument as Instrument,

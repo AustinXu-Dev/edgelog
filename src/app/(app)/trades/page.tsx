@@ -59,9 +59,20 @@ export default async function TradesPage({ searchParams }: PageProps) {
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-500">{trades?.length ?? 0} trades</p>
-            <Link href="/trades/import">
-              <Button variant="secondary" size="sm"><i className="lni lni-upload-1 text-sm" />Import CSV</Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {(trades?.length ?? 0) > 0 && (
+                <a href={`/api/trades/export?${new URLSearchParams(
+                  Object.fromEntries(
+                    Object.entries(searchParams).filter(([, v]) => v !== undefined)
+                  ) as Record<string, string>
+                ).toString()}`}>
+                  <Button variant="secondary" size="sm"><i className="lni lni-download text-sm" />Export CSV</Button>
+                </a>
+              )}
+              <Link href="/trades/import">
+                <Button variant="secondary" size="sm"><i className="lni lni-upload-1 text-sm" />Import CSV</Button>
+              </Link>
+            </div>
           </div>
           <TradeTable trades={(trades as Trade[]) ?? []} />
         </div>

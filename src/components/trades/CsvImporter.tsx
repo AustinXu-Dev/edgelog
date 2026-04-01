@@ -1,18 +1,39 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Papa from 'papaparse';
 import { validateAndParseCsvRows, type ParsedCsvTrade, type CsvParseError } from '@/lib/utils/csv';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils/formatters';
+
+type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+interface Job {
+  id: string;
+  status: JobStatus;
+  total: number;
+  inserted: number | null;
+  skipped: number | null;
+  error: string | null;
+}
 
 export function CsvImporter() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<ParsedCsvTrade[] | null>(null);
   const [errors, setErrors] = useState<CsvParseError[]>([]);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(null);
+  const [job, setJob] = useState<Job | null>(null);
   const [importError, setImportError] = useState('');
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, []);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -25,16 +46,46 @@ export function CsvImporter() {
         const { trades, errors } = validateAndParseCsvRows(results.data as Record<string, string>[]);
         setPreview(trades);
         setErrors(errors);
-        setResult(null);
+        setJob(null);
         setImportError('');
       },
     });
+  }
+
+  function pollJob(jobId: string) {
+    pollRef.current = setTimeout(async () => {
+      if (!mountedRef.current) return;
+
+      const res = await fetch(`/api/jobs/${jobId}`);
+      if (!res.ok) {
+        setImportError('Failed to check import status');
+        setLoading(false);
+        return;
+      }
+
+      const data: Job = await res.json();
+      if (!mountedRef.current) return;
+
+      setJob(data);
+
+      if (data.status === 'completed') {
+        setPreview(null);
+        if (fileRef.current) fileRef.current.value = '';
+        setLoading(false);
+      } else if (data.status === 'failed') {
+        setImportError(data.error ?? 'Import failed');
+        setLoading(false);
+      } else {
+        pollJob(jobId);
+      }
+    }, 2000);
   }
 
   async function handleImport() {
     if (!preview || preview.length === 0) return;
     setLoading(true);
     setImportError('');
+    setJob(null);
 
     const response = await fetch('/api/trades/import', {
       method: 'POST',
@@ -43,22 +94,33 @@ export function CsvImporter() {
     });
 
     const data = await response.json();
-    setLoading(false);
 
     if (!response.ok) {
       setImportError(data.error ?? 'Import failed');
-    } else {
-      setResult(data);
-      setPreview(null);
-      if (fileRef.current) fileRef.current.value = '';
+      setLoading(false);
+      return;
     }
+
+    const { jobId } = data as { jobId: string };
+    pollJob(jobId);
   }
+
+  const statusLabel: Record<JobStatus, string> = {
+    pending: 'Queued…',
+    processing: 'Importing…',
+    completed: 'Import complete',
+    failed: 'Import failed',
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <p className="text-sm text-gray-600 mb-3">
-          Upload a CSV file with columns: <code className="text-blue-600 bg-blue-50 px-1 py-0.5 rounded text-xs">instrument, direction, entry_price, exit_price, position_size, entry_datetime, exit_datetime, stop_loss_planned, take_profit_planned, commission, status</code>
+          Upload a CSV file with columns:{' '}
+          <code className="text-blue-600 bg-blue-50 px-1 py-0.5 rounded text-xs">
+            instrument, direction, entry_price, exit_price, position_size, entry_datetime,
+            exit_datetime, stop_loss_planned, take_profit_planned, commission, status
+          </code>
         </p>
         <input
           ref={fileRef}
@@ -74,7 +136,9 @@ export function CsvImporter() {
           <p className="text-sm font-medium text-red-700 mb-2">Parse errors ({errors.length}):</p>
           <ul className="text-xs text-red-600 space-y-1 list-disc list-inside">
             {errors.map((e, i) => (
-              <li key={i}>Row {e.row}: {e.message}</li>
+              <li key={i}>
+                Row {e.row}: {e.message}
+              </li>
             ))}
           </ul>
         </div>
@@ -84,7 +148,8 @@ export function CsvImporter() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-700">
-              <span className="font-medium text-gray-900">{preview.length}</span> trades parsed successfully
+              <span className="font-medium text-gray-900">{preview.length}</span> trades parsed
+              successfully
             </p>
             <Button onClick={handleImport} loading={loading}>
               Import {preview.length} trade{preview.length !== 1 ? 's' : ''}
@@ -96,7 +161,12 @@ export function CsvImporter() {
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
                   {['Instrument', 'Dir', 'Entry', 'Exit', 'Size', 'Net P&L', 'Status'].map((h) => (
-                    <th key={h} className="text-left py-2 px-3 text-gray-500 font-semibold uppercase tracking-wide">{h}</th>
+                    <th
+                      key={h}
+                      className="text-left py-2 px-3 text-gray-500 font-semibold uppercase tracking-wide"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -104,13 +174,23 @@ export function CsvImporter() {
                 {preview.map((t, i) => (
                   <tr key={i}>
                     <td className="py-2 px-3 text-gray-900">{t.instrument}</td>
-                    <td className={`py-2 px-3 ${t.direction === 'long' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <td
+                      className={`py-2 px-3 ${t.direction === 'long' ? 'text-emerald-600' : 'text-red-600'}`}
+                    >
                       {t.direction}
                     </td>
                     <td className="py-2 px-3 text-gray-700 font-mono">{t.entry_price}</td>
                     <td className="py-2 px-3 text-gray-700 font-mono">{t.exit_price ?? '—'}</td>
                     <td className="py-2 px-3 text-gray-700 font-mono">{t.position_size}</td>
-                    <td className={`py-2 px-3 font-medium font-mono ${t.net_pnl !== null && t.net_pnl > 0 ? 'text-emerald-600' : t.net_pnl !== null && t.net_pnl < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                    <td
+                      className={`py-2 px-3 font-medium font-mono ${
+                        t.net_pnl !== null && t.net_pnl > 0
+                          ? 'text-emerald-600'
+                          : t.net_pnl !== null && t.net_pnl < 0
+                            ? 'text-red-600'
+                            : 'text-gray-500'
+                      }`}
+                    >
                       {t.net_pnl !== null ? formatCurrency(t.net_pnl) : '—'}
                     </td>
                     <td className="py-2 px-3 text-gray-500">{t.status}</td>
@@ -124,10 +204,38 @@ export function CsvImporter() {
         </div>
       )}
 
-      {result && (
+      {job && (job.status === 'pending' || job.status === 'processing') && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+          <svg
+            className="animate-spin h-4 w-4 text-blue-600 shrink-0"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          <p className="text-sm text-blue-700">{statusLabel[job.status]}</p>
+        </div>
+      )}
+
+      {job && job.status === 'completed' && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
           <p className="text-sm text-emerald-700 font-medium">Import complete</p>
-          <p className="text-xs text-emerald-600 mt-1">{result.inserted} inserted, {result.skipped} skipped (duplicates)</p>
+          <p className="text-xs text-emerald-600 mt-1">
+            {job.inserted} inserted, {job.skipped} skipped (duplicates)
+          </p>
+        </div>
+      )}
+
+      {job && job.status === 'failed' && !importError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-700 font-medium">Import failed</p>
+          {job.error && <p className="text-xs text-red-600 mt-1">{job.error}</p>}
         </div>
       )}
     </div>

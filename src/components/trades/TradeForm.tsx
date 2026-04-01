@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { calcPnl, calcRMultiple } from '@/lib/utils/csv';
+import { calcPnl, calcRMultiple, getInstrumentType } from '@/lib/utils/csv';
 import { Badge } from '@/components/ui/Badge';
 import type { Trade, Instrument, Direction, TradeStatus, TradeTag, TradingAccount } from '@/lib/types';
 
@@ -18,10 +18,35 @@ interface TradeFormProps {
 }
 
 const INSTRUMENTS = [
-  { value: 'NDX100', label: 'NDX100' },
-  { value: 'SPX500', label: 'SPX500' },
-  { value: 'NQ', label: 'NQ (Futures)' },
-  { value: 'ES', label: 'ES (Futures)' },
+  // ── CME Equity Futures ──────────────────────
+  { value: 'NQ', label: 'NQ — E-mini Nasdaq-100' },
+  { value: 'ES', label: 'ES — E-mini S&P 500' },
+  { value: 'MNQ', label: 'MNQ — Micro Nasdaq-100' },
+  { value: 'MES', label: 'MES — Micro S&P 500' },
+  { value: 'YM', label: 'YM — E-mini Dow' },
+  { value: 'MYM', label: 'MYM — Micro Dow' },
+  { value: 'RTY', label: 'RTY — Russell 2000' },
+  { value: 'M2K', label: 'M2K — Micro Russell 2000' },
+  // ── CME Commodity Futures ───────────────────
+  { value: 'GC', label: 'GC — Gold Futures' },
+  { value: 'MGC', label: 'MGC — Micro Gold' },
+  { value: 'CL', label: 'CL — Crude Oil' },
+  { value: 'MCL', label: 'MCL — Micro Crude Oil' },
+  // ── Index CFDs ──────────────────────────────
+  { value: 'NDX100', label: 'NDX100 — Nasdaq-100 CFD' },
+  { value: 'SPX500', label: 'SPX500 — S&P 500 CFD' },
+  { value: 'US30', label: 'US30 — Dow Jones CFD' },
+  { value: 'GER40', label: 'GER40 — DAX 40 CFD' },
+  // ── Forex ───────────────────────────────────
+  { value: 'EURUSD', label: 'EUR/USD' },
+  { value: 'GBPUSD', label: 'GBP/USD' },
+  { value: 'AUDUSD', label: 'AUD/USD' },
+  { value: 'NZDUSD', label: 'NZD/USD' },
+  { value: 'USDJPY', label: 'USD/JPY' },
+  { value: 'USDCAD', label: 'USD/CAD' },
+  // ── Crypto ──────────────────────────────────
+  { value: 'BTCUSD', label: 'BTC/USD' },
+  { value: 'ETHUSD', label: 'ETH/USD' },
 ];
 
 const DIRECTIONS = [
@@ -62,8 +87,8 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
   }
 
   const [form, setForm] = useState({
-    instrument: initialValues?.instrument ?? 'NDX100',
-    instrument_type: initialValues?.instrument_type ?? 'index',
+    instrument: initialValues?.instrument ?? 'NQ',
+    instrument_type: initialValues?.instrument_type ?? 'futures',
     direction: initialValues?.direction ?? 'long',
     entry_price: initialValues?.entry_price?.toString() ?? '',
     exit_price: initialValues?.exit_price?.toString() ?? '',
@@ -81,7 +106,7 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
       const next = { ...prev, [key]: value };
       // Auto-update instrument_type when instrument changes
       if (key === 'instrument') {
-        next.instrument_type = ['NQ', 'ES'].includes(value) ? 'futures' : 'index';
+        next.instrument_type = getInstrumentType(value);
       }
       return next;
     });

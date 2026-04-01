@@ -14,8 +14,19 @@ export interface TradingAccount {
   created_at: string;
 }
 
-export type Instrument = 'NDX100' | 'SPX500' | 'NQ' | 'ES';
-export type InstrumentType = 'index' | 'futures';
+export type Instrument =
+  // CME Equity Futures
+  | 'NQ' | 'ES' | 'MNQ' | 'MES' | 'YM' | 'MYM' | 'RTY' | 'M2K'
+  // CME Commodity Futures
+  | 'GC' | 'MGC' | 'CL' | 'MCL'
+  // Index CFDs
+  | 'NDX100' | 'SPX500' | 'US30' | 'GER40'
+  // Forex
+  | 'EURUSD' | 'GBPUSD' | 'AUDUSD' | 'NZDUSD' | 'USDJPY' | 'USDCAD'
+  // Crypto
+  | 'BTCUSD' | 'ETHUSD';
+
+export type InstrumentType = 'futures' | 'index' | 'forex' | 'crypto';
 export type Direction = 'long' | 'short';
 export type TradeStatus = 'open' | 'closed';
 export type Mood = 'focused' | 'neutral' | 'anxious' | 'impulsive';

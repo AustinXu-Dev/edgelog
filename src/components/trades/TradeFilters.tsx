@@ -30,12 +30,36 @@ export function TradeFilters() {
         defaultValue={searchParams.get('instrument') ?? ''}
         options={[
           { value: '', label: 'All' },
-          { value: 'NDX100', label: 'NDX100' },
-          { value: 'SPX500', label: 'SPX500' },
+          // Futures
           { value: 'NQ', label: 'NQ' },
           { value: 'ES', label: 'ES' },
+          { value: 'MNQ', label: 'MNQ' },
+          { value: 'MES', label: 'MES' },
+          { value: 'YM', label: 'YM' },
+          { value: 'MYM', label: 'MYM' },
+          { value: 'RTY', label: 'RTY' },
+          { value: 'M2K', label: 'M2K' },
+          { value: 'GC', label: 'GC' },
+          { value: 'MGC', label: 'MGC' },
+          { value: 'CL', label: 'CL' },
+          { value: 'MCL', label: 'MCL' },
+          // Index CFDs
+          { value: 'NDX100', label: 'NDX100' },
+          { value: 'SPX500', label: 'SPX500' },
+          { value: 'US30', label: 'US30' },
+          { value: 'GER40', label: 'GER40' },
+          // Forex
+          { value: 'EURUSD', label: 'EUR/USD' },
+          { value: 'GBPUSD', label: 'GBP/USD' },
+          { value: 'AUDUSD', label: 'AUD/USD' },
+          { value: 'NZDUSD', label: 'NZD/USD' },
+          { value: 'USDJPY', label: 'USD/JPY' },
+          { value: 'USDCAD', label: 'USD/CAD' },
+          // Crypto
+          { value: 'BTCUSD', label: 'BTC/USD' },
+          { value: 'ETHUSD', label: 'ETH/USD' },
         ]}
-        className="w-32"
+        className="w-36"
       />
       <Select
         label="Direction"

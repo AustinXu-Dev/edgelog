@@ -18,6 +18,8 @@ Edgelog is a **personal trading journal** web application. It lets traders log t
 | Icons | LineIcons, Lucide React |
 | CSV Parsing | PapaParse |
 | Progress Bar | nextjs-toploader |
+| Background Jobs | Inngest |
+| Error Monitoring | Sentry (`@sentry/nextjs`) |
 
 Frontend and backend are **colocated** in one Next.js project. There is no separate API server. Database access happens in Server Components and API Routes directly via the Supabase client.
 
@@ -47,7 +49,12 @@ src/app/
 │   │   ├── page.tsx                # Journal entry list
 │   │   └── [date]/page.tsx         # Daily journal editor
 │   └── settings/page.tsx           # Profile settings
-├── api/trades/import/route.ts      # POST endpoint for CSV import
+├── api/
+│   ├── trades/
+│   │   ├── import/route.ts         # POST — queue CSV import job via Inngest
+│   │   └── export/route.ts         # GET — download trades as CSV (with filters)
+│   ├── jobs/[id]/route.ts          # GET — poll import job status
+│   └── inngest/route.ts            # Inngest serve endpoint (GET/POST/PUT)
 └── auth/callback/route.ts          # Supabase OAuth callback
 ```
 
@@ -106,10 +113,17 @@ The dashboard (`/dashboard`) is a Server Component that fetches all closed trade
 **Edit Trade (`/trades/[id]/edit`):**
 - Same form, pre-populated with existing values.
 
-**CSV Import (`/trades/import` + `POST /api/trades/import`):**
-- Upload a CSV file; the client parses it with PapaParse.
-- Preview validated rows and errors before committing.
-- The API route inserts valid rows in bulk and deduplicates on `(user_id, instrument, entry_datetime)`.
+**CSV Import (`/trades/import`):**
+- Upload a CSV file; the client parses it with PapaParse and shows a preview with validation errors.
+- On confirm, `POST /api/trades/import` creates an `import_jobs` record and fires an Inngest event, returning a `jobId`.
+- `CsvImporter` polls `GET /api/jobs/[id]` every 2 s, showing a spinner while pending/processing and a result on completion or failure.
+- The Inngest function (`process-csv-import`) runs in the background: upserts trades via the Supabase service-role client and updates the job record. Deduplication key: `(user_id, instrument, entry_datetime)`.
+- A companion Inngest function (`handle-csv-import-failure`) listens for `inngest/function.failed` and marks the job as failed after all retries are exhausted.
+
+**CSV Export (`GET /api/trades/export`):**
+- Returns a `.csv` download of the current trade list, respecting the same filters as the trade list page (instrument, direction, status, date range, active account).
+- "Export CSV" button appears in the trades list only when trades exist; it passes the active filters as query params so the export matches exactly what is visible.
+- Columns: `instrument, instrument_type, direction, entry_price, exit_price, position_size, entry_datetime, exit_datetime, stop_loss_planned, take_profit_planned, commission, status, gross_pnl, net_pnl, r_multiple`. The first 11 columns are re-importable.
 
 ---
 
@@ -171,6 +185,7 @@ Two separate but interconnected journal types:
 - `MarketingNav` — sticky nav with mobile hamburger menu (client component).
 - `FAQAccordion` — expandable FAQ items (client component).
 - No auto-redirect to dashboard for authenticated users.
+- `AppMockup` — inline server component showing a pixel-accurate dashboard preview. Uses SVG (not Recharts) to replicate bar charts. Layout mirrors real dashboard: KPI cards → Equity Curve → 3-column charts (P&L by Instrument, DoW, ToD) → 2-column bottom row (Monthly P&L Calendar heatmap + Recent Trades table).
 
 ---
 
@@ -190,6 +205,7 @@ All tables have **Row-Level Security (RLS)** — users can only read/write their
 | `trade_journal_entries` | Per-trade notes, rating, strategy, screenshot path |
 | `daily_journal` | Daily reflection with mood |
 | `daily_journal_trade_links` | Junction: daily_journal ↔ trades |
+| `import_jobs` | Tracks async CSV import status (pending → processing → completed/failed) |
 
 Trade deduplication key: `(user_id, instrument, entry_datetime)`.
 
@@ -210,16 +226,46 @@ Trade deduplication key: `(user_id, instrument, entry_datetime)`.
 
 ---
 
+## Supported Instruments
+
+All instrument fields are plain `text` in Supabase — no DB migration needed when adding new instruments.
+
+| Category | Instruments |
+|---|---|
+| CME Equity Futures | NQ, ES, MNQ, MES, YM, MYM, RTY, M2K |
+| CME Commodity Futures | GC, MGC, CL, MCL |
+| Index CFDs | NDX100, SPX500, US30, GER40 |
+| Forex | EURUSD, GBPUSD, AUDUSD, NZDUSD, USDJPY, USDCAD |
+| Crypto | BTCUSD, ETHUSD |
+
+`getInstrumentType(instrument)` in `src/lib/utils/csv.ts` returns `'futures' | 'index' | 'forex' | 'crypto'`.
+
 ## P&L Calculation
 
-P&L is computed client-side (for CSV preview) and server-side (on import/save) using per-instrument **point values**:
+P&L is computed client-side (for CSV preview) and server-side (on import/save) using per-instrument **point values** from `POINT_VALUES` in `src/lib/utils/csv.ts`:
 
-| Instrument | Point Value | Type |
+| Instrument | Point Value | Note |
 |---|---|---|
 | NQ | $20/point | CME E-mini Nasdaq Futures |
 | ES | $50/point | CME E-mini S&P 500 Futures |
+| MNQ | $2/point | Micro Nasdaq-100 |
+| MES | $5/point | Micro S&P 500 |
+| YM | $5/point | E-mini Dow |
+| MYM | $0.50/point | Micro Dow |
+| RTY | $50/point | E-mini Russell 2000 |
+| M2K | $5/point | Micro Russell 2000 |
+| GC | $100/point | Gold Futures |
+| MGC | $10/point | Micro Gold |
+| CL | $1,000/point | Crude Oil |
+| MCL | $100/point | Micro Crude Oil |
 | NDX100 | $20/point | CFD (mirrors NQ) |
 | SPX500 | $50/point | CFD (mirrors ES) |
+| US30 | $1/point | Dow Jones CFD |
+| GER40 | $1/point | DAX 40 CFD (EUR-denominated, approx.) |
+| EURUSD/GBPUSD/AUDUSD/NZDUSD | 100,000 | USD-quoted, position_size in lots |
+| USDJPY | ~700 | Approximate (varies with rate) |
+| USDCAD | ~74,000 | Approximate (varies with rate) |
+| BTCUSD/ETHUSD | 1 | Crypto, position_size in coins |
 
 **Gross P&L** = `(exit − entry) × size × direction × pointValue`
 **Net P&L** = `gross_pnl − commission`
@@ -267,7 +313,25 @@ P&L is computed client-side (for CSV preview) and server-side (on import/save) u
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SENTRY_DSN=
+NEXT_PUBLIC_SENTRY_ENVIRONMENT=   # development | production
+SENTRY_AUTH_TOKEN=                # for source map uploads on build
+SUPABASE_SERVICE_ROLE_KEY=        # used by Inngest background function (bypasses RLS)
+INNGEST_SIGNING_KEY=              # from inngest.com dashboard — authenticates function calls
+INNGEST_EVENT_KEY=                # from inngest.com dashboard — authenticates event sends
+INNGEST_DEV=1                     # local dev only — routes to local Inngest Dev Server, skips signature check
 ```
+
+---
+
+## Error Monitoring
+
+Sentry is configured via Next.js instrumentation conventions:
+
+- `instrumentation-client.ts` — browser SDK with Session Replay
+- `instrumentation.ts` — server + edge SDK via `register()`
+- `src/app/global-error.tsx` — React error boundary for rendering errors
+- Key captures: unknown instrument in `calcPnl`, Supabase upsert errors in CSV import route
 
 ---
 
@@ -279,5 +343,13 @@ npm run build    # Production build
 npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
+
+For local Inngest development, run the Dev Server in a second terminal:
+
+```bash
+npx inngest-cli@latest dev   # Inngest Dev Server at localhost:8288 (auto-discovers /api/inngest)
+```
+
+`INNGEST_DEV=1` must be set in `.env.local` for the SDK to route to the local dev server. Do **not** set it in production.
 
 No test runner is configured.

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { inngest } from '@/inngest/client';
 import type { ParsedCsvTrade } from '@/lib/utils/csv';
 
 export async function POST(request: NextRequest) {
@@ -19,23 +20,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No trades provided' }, { status: 400 });
   }
 
-  const rows = trades.map((t) => ({
-    ...t,
-    user_id: user.id,
-  }));
+  const accountId = request.cookies.get('active_account_id')?.value ?? null;
 
-  // Use upsert with conflict on entry_datetime + instrument to skip duplicates
-  const { data, error } = await supabase
-    .from('trades')
-    .upsert(rows, { onConflict: 'user_id,instrument,entry_datetime', ignoreDuplicates: true })
-    .select();
+  // Create a job record so the client can poll for progress
+  const { data: job, error: jobError } = await supabase
+    .from('import_jobs')
+    .insert({ user_id: user.id, status: 'pending', total: trades.length })
+    .select('id')
+    .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (jobError || !job) {
+    return NextResponse.json({ error: 'Failed to create import job' }, { status: 500 });
   }
 
-  const inserted = data?.length ?? 0;
-  const skipped = trades.length - inserted;
+  await inngest.send({
+    name: 'trades/csv.import',
+    data: { jobId: job.id, userId: user.id, trades, accountId },
+  });
 
-  return NextResponse.json({ inserted, skipped });
+  return NextResponse.json({ jobId: job.id });
 }
