@@ -75,8 +75,8 @@ export async function getTradeById(id: string): Promise<TradeWithDetails | null>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const journal = (trade as any).trade_journal_entries?.[0] ?? null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { trade_tag_links: _, trade_journal_entries: __, ...tradeData } = trade as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  const { trade_tag_links: _tagLinks, trade_journal_entries: _journalEntries, ...tradeData } = trade as any;
 
   return {
     ...tradeData,
