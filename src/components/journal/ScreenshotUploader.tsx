@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
@@ -13,6 +13,7 @@ interface Props {
 
 export function ScreenshotUploader({ tradeId, userId, existingUrl }: Props) {
   const supabase = createBrowserClient();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState<string | null>(existingUrl);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -69,24 +70,23 @@ export function ScreenshotUploader({ tradeId, userId, existingUrl }: Props) {
         </div>
       )}
       <div className="flex items-center gap-3">
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleUpload}
-            className="hidden"
-            disabled={uploading}
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            loading={uploading}
-            onClick={() => document.querySelector<HTMLInputElement>('input[type=file]')?.click()}
-          >
-            {url ? 'Replace Screenshot' : 'Upload Screenshot'}
-          </Button>
-        </label>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleUpload}
+          className="hidden"
+          disabled={uploading}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          loading={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {url ? 'Replace Screenshot' : 'Upload Screenshot'}
+        </Button>
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
     </div>

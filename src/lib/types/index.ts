@@ -17,10 +17,14 @@ export interface TradingAccount {
 export type Instrument =
   // CME Equity Futures
   | 'NQ' | 'ES' | 'MNQ' | 'MES' | 'YM' | 'MYM' | 'RTY' | 'M2K'
-  // CME Commodity Futures
-  | 'GC' | 'MGC' | 'CL' | 'MCL'
+  // CME Metals Futures
+  | 'GC' | 'MGC' | 'SI' | 'SIL' | 'PL'
+  // CME Energy Futures
+  | 'CL' | 'MCL'
   // Index CFDs
   | 'NDX100' | 'SPX500' | 'US30' | 'GER40'
+  // Commodity CFDs
+  | 'XAUUSD' | 'XAGUSD'
   // Forex
   | 'EURUSD' | 'GBPUSD' | 'AUDUSD' | 'NZDUSD' | 'USDJPY' | 'USDCAD'
   // Crypto

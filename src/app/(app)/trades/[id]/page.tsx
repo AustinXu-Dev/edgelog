@@ -47,6 +47,9 @@ export default async function TradeDetailPage({ params }: PageProps) {
         title={`${trade.instrument} — ${trade.direction === 'long' ? 'Long' : 'Short'}`}
         actions={
           <div className="flex gap-2">
+            <Link href="/trades">
+              <Button variant="ghost" size="sm">Back</Button>
+            </Link>
             <Link href={`/trades/${trade.id}/edit`}>
               <Button variant="secondary" size="sm"><i className="lni lni-pencil-1 text-sm" />Edit</Button>
             </Link>

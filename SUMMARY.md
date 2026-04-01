@@ -233,8 +233,10 @@ All instrument fields are plain `text` in Supabase — no DB migration needed wh
 | Category | Instruments |
 |---|---|
 | CME Equity Futures | NQ, ES, MNQ, MES, YM, MYM, RTY, M2K |
-| CME Commodity Futures | GC, MGC, CL, MCL |
+| CME Metals Futures | GC, MGC, SI, SIL, PL |
+| CME Energy Futures | CL, MCL |
 | Index CFDs | NDX100, SPX500, US30, GER40 |
+| Commodity CFDs | XAUUSD, XAGUSD |
 | Forex | EURUSD, GBPUSD, AUDUSD, NZDUSD, USDJPY, USDCAD |
 | Crypto | BTCUSD, ETHUSD |
 
@@ -256,12 +258,17 @@ P&L is computed client-side (for CSV preview) and server-side (on import/save) u
 | M2K | $5/point | Micro Russell 2000 |
 | GC | $100/point | Gold Futures |
 | MGC | $10/point | Micro Gold |
+| SI | $5,000/point | Silver Futures |
+| SIL | $1,000/point | Micro Silver |
+| PL | $50/point | Platinum Futures |
 | CL | $1,000/point | Crude Oil |
 | MCL | $100/point | Micro Crude Oil |
 | NDX100 | $20/point | CFD (mirrors NQ) |
 | SPX500 | $50/point | CFD (mirrors ES) |
 | US30 | $1/point | Dow Jones CFD |
 | GER40 | $1/point | DAX 40 CFD (EUR-denominated, approx.) |
+| XAUUSD | $100/point | Gold CFD — 1 lot = 100 troy oz |
+| XAGUSD | $5,000/point | Silver CFD — 1 lot = 5,000 troy oz |
 | EURUSD/GBPUSD/AUDUSD/NZDUSD | 100,000 | USD-quoted, position_size in lots |
 | USDJPY | ~700 | Approximate (varies with rate) |
 | USDCAD | ~74,000 | Approximate (varies with rate) |

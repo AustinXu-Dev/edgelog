@@ -26,6 +26,29 @@ export async function getTrades(
   return data ?? [];
 }
 
+export async function getRecentTrades(
+  limit: number,
+  accountId?: string | null
+): Promise<Trade[]> {
+  const supabase = createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  let query = supabase
+    .from('trades')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('entry_datetime', { ascending: false })
+    .limit(limit);
+
+  if (accountId) query = query.eq('account_id', accountId);
+
+  const { data } = await query;
+  return data ?? [];
+}
+
 export async function getTradeById(id: string): Promise<TradeWithDetails | null> {
   const supabase = createServerClient();
   const {
