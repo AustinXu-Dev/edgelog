@@ -31,6 +31,14 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Admin routes — require admin role in app_metadata
+  if (pathname.startsWith('/admin')) {
+    if (!user || user.app_metadata?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    return supabaseResponse;
+  }
+
   const protectedPaths = ['/dashboard', '/trades', '/journal', '/settings'];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
 
@@ -47,6 +55,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/admin/:path*',
     '/dashboard/:path*',
     '/trades/:path*',
     '/journal/:path*',
