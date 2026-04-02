@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
+import { revalidateDashboard } from '@/app/actions/dashboard';
 
 interface Props {
   tradeId: string;
@@ -18,6 +19,7 @@ export function DeleteTradeButton({ tradeId }: Props) {
   async function handleDelete() {
     setLoading(true);
     await supabase.from('trades').delete().eq('id', tradeId);
+    await revalidateDashboard();
     router.push('/trades');
     router.refresh();
   }

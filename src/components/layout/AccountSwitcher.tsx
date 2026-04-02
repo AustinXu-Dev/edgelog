@@ -8,6 +8,7 @@ import type { TradingAccount } from '@/lib/types';
 
 interface Props {
   activeAccountId: string | null;
+  initialAccounts: TradingAccount[];
 }
 
 function formatBalance(n: number): string {
@@ -18,23 +19,20 @@ function pnlSign(n: number): string {
   return n > 0 ? '+' : '';
 }
 
-export function AccountSwitcher({ activeAccountId }: Props) {
+export function AccountSwitcher({ activeAccountId, initialAccounts }: Props) {
   const supabase = createBrowserClient();
   const router = useRouter();
-  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+  const [accounts, setAccounts] = useState<TradingAccount[]>(initialAccounts);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newBalance, setNewBalance] = useState('');
   const [saving, setSaving] = useState(false);
   const [cumulativePnl, setCumulativePnl] = useState<number | null>(null);
 
+  // Sync when server re-renders with updated accounts (e.g. after Settings creates one)
   useEffect(() => {
-    supabase
-      .from('trading_accounts')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .then(({ data }) => setAccounts(data ?? []));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    setAccounts(initialAccounts);
+  }, [initialAccounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch cumulative P&L for the active account via SQL SUM — avoids fetching all rows
   useEffect(() => {

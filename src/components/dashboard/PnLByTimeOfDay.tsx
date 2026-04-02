@@ -16,10 +16,17 @@ function formatHour(h: number) {
 }
 
 export function PnLByTimeOfDay({ data }: Props) {
-  const formatted = useMemo(
-    () => data.map((d) => ({ ...d, label: formatHour(d.hour) })),
-    [data]
-  );
+  const formatted = useMemo(() => {
+    if (data.length === 0) return [];
+    const map = new Map(data.map((d) => [d.hour, d.total_pnl]));
+    const minHour = Math.max(0, Math.min(...data.map((d) => d.hour)) - 2);
+    const maxHour = Math.min(23, Math.max(...data.map((d) => d.hour)) + 2);
+    const result = [];
+    for (let h = minHour; h <= maxHour; h++) {
+      result.push({ hour: h, total_pnl: map.get(h) ?? 0, label: formatHour(h) });
+    }
+    return result;
+  }, [data]);
 
   if (formatted.length === 0) {
     return (
@@ -40,7 +47,7 @@ export function PnLByTimeOfDay({ data }: Props) {
           labelStyle={{ color: '#6b7280', fontSize: 11 }}
           formatter={(v) => [`$${Number(v).toFixed(2)}`, 'P&L']}
         />
-        <Bar dataKey="total_pnl" radius={[4, 4, 0, 0]}>
+        <Bar dataKey="total_pnl" radius={[4, 4, 0, 0]} maxBarSize={40}>
           {formatted.map((entry, i) => (
             <Cell key={i} fill={entry.total_pnl >= 0 ? '#059669' : '#dc2626'} />
           ))}

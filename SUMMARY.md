@@ -34,9 +34,11 @@ src/app/
 ├── page.tsx                        # Public marketing/landing page
 ├── (auth)/
 │   ├── login/page.tsx              # Login form
-│   └── register/page.tsx          # Registration form
+│   └── register/page.tsx          # Registration form → redirects to /onboarding
+├── (onboarding)/                   # Protected, no sidebar
+│   └── onboarding/page.tsx         # Account setup for new/accountless users
 ├── (app)/                          # Protected — requires auth
-│   ├── layout.tsx                  # Sidebar + BottomNav shell
+│   ├── layout.tsx                  # Sidebar + BottomNav shell + NoAccountBanner
 │   ├── dashboard/page.tsx          # Analytics dashboard
 │   ├── trades/
 │   │   ├── page.tsx                # Trade list
@@ -48,7 +50,7 @@ src/app/
 │   ├── journal/
 │   │   ├── page.tsx                # Journal entry list
 │   │   └── [date]/page.tsx         # Daily journal editor
-│   └── settings/page.tsx           # Profile settings
+│   └── settings/page.tsx           # Profile + Accounts tabs
 ├── api/
 │   ├── trades/
 │   │   ├── import/route.ts         # POST — queue CSV import job via Inngest
@@ -61,9 +63,15 @@ src/app/
 ### Auth & Middleware
 
 - Auth is handled by **Supabase GoTrue** (email/password).
-- `src/middleware.ts` guards `/dashboard`, `/trades`, `/journal`, `/settings` — unauthenticated users are redirected to `/login`.
+- `src/middleware.ts` guards `/dashboard`, `/trades`, `/journal`, `/settings`, `/onboarding` — unauthenticated users are redirected to `/login`.
 - Authenticated users visiting `/login` or `/register` are redirected to `/dashboard`.
 - The root `/` (marketing page) is public and unguarded.
+
+### Onboarding
+
+- After registration, users are redirected to `/onboarding` (not `/dashboard`) to create their first trading account.
+- The `/onboarding` page uses its own `(onboarding)` route group with a minimal sidebar-free layout. If the user already has accounts, it immediately redirects to `/dashboard`.
+- For existing users who have no accounts, `(app)/layout.tsx` renders a `NoAccountBanner` (`src/components/layout/NoAccountBanner.tsx`) — an amber warning bar visible on all app pages with an inline account creation form.
 
 ---
 
@@ -162,6 +170,12 @@ Two separate but interconnected journal types:
   - Starting balance and cumulative P&L.
   - Inline form to create a new account.
 
+**Account server actions** (`src/app/actions/account.ts`):
+- `createAccountAndActivate` — creates + immediately activates (used by onboarding and `NoAccountBanner`).
+- `createAccountAction` — creates without changing active account (used by Settings Accounts tab).
+- `deleteAccountAction(id, deleteTrades)` — deletes account. When `deleteTrades` is `true`, first deletes all trades for that account (which cascades to `trade_journal_entries`, `trade_tag_links`, `daily_journal_trade_links`).
+- `closeEdgelogAccount` — deletes the Supabase auth user via Admin API (service-role key); all data cascades. Client redirects to `/` on success.
+
 ---
 
 ### 5. Tagging
@@ -175,8 +189,13 @@ Two separate but interconnected journal types:
 
 ### 6. Settings
 
-- Profile page (`/settings`) with display name and timezone.
-- Form updates the `profiles` table via a Server Action.
+`/settings` uses URL-based tabs (`searchParams.tab`):
+
+- **Profile tab** (default) — display name and timezone form. Below the form, a **Danger Zone** section lets users permanently close their Edgelog account by typing their email to confirm.
+- **Accounts tab** (`?tab=accounts`) — lists all trading accounts with name and starting balance. Each account can be deleted with an inline confirmation that offers two options:
+  - **Keep trades** — account is removed, trades become unassigned (`account_id → null`).
+  - **Delete trades and journals** — account and all its trades are deleted (cascades to trade journal entries, tag links, daily journal trade links).
+  - New accounts can be added inline from this tab.
 
 ---
 

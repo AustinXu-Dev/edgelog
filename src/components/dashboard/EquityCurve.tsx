@@ -28,9 +28,12 @@ export function EquityCurve({ data }: Props) {
     );
   }
 
+  // With a single point there's no segment to draw — prepend a zero baseline so the line renders
+  const chartData = data.length === 1 ? [{ date: '', cumPnl: 0, pnl: 0 }, ...data] : data;
+
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <LineChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+      <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
         <XAxis
           dataKey="date"
           tick={{ fill: '#9ca3af', fontSize: 11 }}

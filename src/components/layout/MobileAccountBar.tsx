@@ -8,25 +8,23 @@ import type { TradingAccount } from '@/lib/types';
 
 interface Props {
   activeAccountId: string | null;
+  initialAccounts: TradingAccount[];
 }
 
-export function MobileAccountBar({ activeAccountId }: Props) {
+export function MobileAccountBar({ activeAccountId, initialAccounts }: Props) {
   const supabase = createBrowserClient();
   const router = useRouter();
-  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+  const [accounts, setAccounts] = useState<TradingAccount[]>(initialAccounts);
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newBalance, setNewBalance] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Sync when server re-renders with updated accounts (e.g. after Settings creates one)
   useEffect(() => {
-    supabase
-      .from('trading_accounts')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .then(({ data }) => setAccounts(data ?? []));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    setAccounts(initialAccounts);
+  }, [initialAccounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSwitch(id: string | null) {
     await setActiveAccount(id);
