@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { AccountSwitcher } from './AccountSwitcher';
+import { HelpGuide } from './HelpGuide';
+import type { TradingAccount } from '@/lib/types';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: 'lni-home-2' },
@@ -15,9 +17,10 @@ const navItems = [
 interface SidebarProps {
   userEmail: string | null;
   activeAccountId: string | null;
+  accounts: TradingAccount[];
 }
 
-export function Sidebar({ userEmail, activeAccountId }: SidebarProps) {
+export function Sidebar({ userEmail, activeAccountId, accounts }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createBrowserClient();
@@ -29,14 +32,14 @@ export function Sidebar({ userEmail, activeAccountId }: SidebarProps) {
   }
 
   return (
-    <aside className="flex flex-col w-60 min-h-screen bg-white border-r border-gray-200">
+    <aside className="flex flex-col w-60 h-screen bg-white border-r border-gray-200">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-200">
         <span className="text-lg font-bold text-gray-900 tracking-tight">Edgelog</span>
       </div>
 
       {/* Account Switcher */}
-      <AccountSwitcher activeAccountId={activeAccountId} />
+      <AccountSwitcher activeAccountId={activeAccountId} initialAccounts={accounts} />
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
@@ -75,13 +78,16 @@ export function Sidebar({ userEmail, activeAccountId }: SidebarProps) {
       {/* User */}
       <div className="px-4 py-4 border-t border-gray-200">
         <p className="text-xs text-gray-500 truncate mb-2">{userEmail}</p>
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          <i className="lni lni-exit text-sm" />
-          Sign out
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <i className="lni lni-exit text-sm" />
+            Sign out
+          </button>
+          <HelpGuide variant="sidebar" />
+        </div>
       </div>
     </aside>
   );

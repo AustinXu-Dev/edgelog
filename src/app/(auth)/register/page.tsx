@@ -35,7 +35,7 @@ export default function RegisterPage() {
     } else {
       setSuccess(true);
       setLoading(false);
-      setTimeout(() => router.push('/dashboard'), 1500);
+      setTimeout(() => router.push('/onboarding'), 1500);
     }
   }
 
@@ -43,7 +43,7 @@ export default function RegisterPage() {
     return (
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 text-center">
         <p className="text-emerald-600 font-medium">Account created!</p>
-        <p className="text-gray-500 text-sm mt-1">Redirecting you to the dashboard...</p>
+        <p className="text-gray-500 text-sm mt-1">Setting up your account...</p>
       </div>
     );
   }

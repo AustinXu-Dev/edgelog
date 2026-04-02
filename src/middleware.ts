@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const protectedPaths = ['/dashboard', '/trades', '/journal', '/settings'];
+  const protectedPaths = ['/dashboard', '/trades', '/journal', '/settings', '/onboarding'];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
 
   if (!user && isProtected) {
@@ -51,6 +51,7 @@ export const config = {
     '/trades/:path*',
     '/journal/:path*',
     '/settings/:path*',
+    '/onboarding',
     '/login',
     '/register',
   ],

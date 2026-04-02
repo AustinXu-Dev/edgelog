@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import { validateAndParseCsvRows, type ParsedCsvTrade, type CsvParseError } from '@/lib/utils/csv';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils/formatters';
+import { revalidateDashboard } from '@/app/actions/dashboard';
 
 type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -77,6 +78,7 @@ export function CsvImporter() {
         if (data.status === 'completed') {
           setPreview(null);
           if (fileRef.current) fileRef.current.value = '';
+          await revalidateDashboard();
           setLoading(false);
         } else if (data.status === 'failed') {
           setImportError(data.error ?? 'Import failed');

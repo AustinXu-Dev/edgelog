@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { calcPnl, calcRMultiple, getInstrumentType, INSTRUMENT_DEFINITIONS } from '@/lib/utils/csv';
 import { Badge } from '@/components/ui/Badge';
 import type { Trade, Instrument, Direction, TradeStatus, TradeTag, TradingAccount } from '@/lib/types';
+import { revalidateDashboard } from '@/app/actions/dashboard';
 
 interface TradeFormProps {
   initialValues?: Partial<Trade>;
@@ -159,6 +160,7 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
           selectedTagIds.map((tag_id) => ({ trade_id: result.data.id, tag_id }))
         );
       }
+      await revalidateDashboard();
       router.push(`/trades/${result.data.id}`);
       router.refresh();
     }

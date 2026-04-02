@@ -26,7 +26,7 @@ export function PnLByInstrument({ data }: Props) {
           labelStyle={{ color: '#6b7280', fontSize: 11 }}
           formatter={(v) => [`$${Number(v).toFixed(2)}`, 'P&L']}
         />
-        <Bar dataKey="total_pnl" radius={[4, 4, 0, 0]}>
+        <Bar dataKey="total_pnl" radius={[4, 4, 0, 0]} maxBarSize={40}>
           {data.map((entry, i) => (
             <Cell key={i} fill={entry.total_pnl >= 0 ? '#059669' : '#dc2626'} />
           ))}
