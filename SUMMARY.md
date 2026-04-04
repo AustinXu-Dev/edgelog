@@ -33,8 +33,10 @@ Frontend and backend are **colocated** in one Next.js project. There is no separ
 src/app/
 ├── page.tsx                        # Public marketing/landing page
 ├── (auth)/
-│   ├── login/page.tsx              # Login form
-│   └── register/page.tsx          # Registration form → redirects to /onboarding
+│   ├── login/page.tsx              # Login form (includes "Forgot password?" link)
+│   ├── register/page.tsx           # Registration form → redirects to /onboarding
+│   ├── forgot-password/page.tsx    # Enter email → sends Supabase password reset link
+│   └── reset-password/page.tsx     # Set new password after clicking reset link
 ├── (onboarding)/                   # Protected, no sidebar
 │   └── onboarding/page.tsx         # Account setup for new/accountless users
 ├── (app)/                          # Protected — requires auth
@@ -66,6 +68,13 @@ src/app/
 - `src/middleware.ts` guards `/dashboard`, `/trades`, `/journal`, `/settings`, `/onboarding` — unauthenticated users are redirected to `/login`.
 - Authenticated users visiting `/login` or `/register` are redirected to `/dashboard`.
 - The root `/` (marketing page) is public and unguarded.
+- `/forgot-password` and `/reset-password` are public and unguarded (no middleware matcher).
+
+### Forgot / Reset Password
+
+- **`/forgot-password`** — User enters their email; calls `supabase.auth.resetPasswordForEmail()` with `redirectTo: /reset-password`. On success, shows a confirmation message.
+- **`/reset-password`** — User lands here after clicking the email link (Supabase injects a recovery session via URL hash). User sets a new password; calls `supabase.auth.updateUser({ password })`, then redirects to `/dashboard`.
+- Supabase dashboard must have `https://<domain>/reset-password` added to **Redirect URLs** (Authentication → URL Configuration).
 
 ### Onboarding
 
