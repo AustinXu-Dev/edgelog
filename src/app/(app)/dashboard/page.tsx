@@ -19,10 +19,11 @@ import { DashboardFilterToggle } from '@/components/dashboard/DashboardFilterTog
 import { Card } from '@/components/ui/Card';
 
 // Recharts is ~100KB gzipped — lazy-load so it doesn't block initial page render
-const EquityCurve     = dynamic(() => import('@/components/dashboard/EquityCurve').then(m => m.EquityCurve), { ssr: false });
-const PnLByInstrument = dynamic(() => import('@/components/dashboard/PnLByInstrument').then(m => m.PnLByInstrument), { ssr: false });
-const PnLByDayOfWeek  = dynamic(() => import('@/components/dashboard/PnLByDayOfWeek').then(m => m.PnLByDayOfWeek), { ssr: false });
-const PnLByTimeOfDay  = dynamic(() => import('@/components/dashboard/PnLByTimeOfDay').then(m => m.PnLByTimeOfDay), { ssr: false });
+const EquityCurve       = dynamic(() => import('@/components/dashboard/EquityCurve').then(m => m.EquityCurve), { ssr: false });
+const PnLByInstrument   = dynamic(() => import('@/components/dashboard/PnLByInstrument').then(m => m.PnLByInstrument), { ssr: false });
+const PnLByDayOfWeek    = dynamic(() => import('@/components/dashboard/PnLByDayOfWeek').then(m => m.PnLByDayOfWeek), { ssr: false });
+const PnLByTimeOfDay    = dynamic(() => import('@/components/dashboard/PnLByTimeOfDay').then(m => m.PnLByTimeOfDay), { ssr: false });
+const DashboardAIInsights = dynamic(() => import('@/components/dashboard/DashboardAIInsights').then(m => m.DashboardAIInsights), { ssr: false });
 
 interface PageProps {
   searchParams: { from?: string; to?: string };
@@ -115,6 +116,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             <RecentTradesTable trades={recentTrades} />
           </Card>
         </div>
+
+        {/* AI Insights */}
+        <Card title="AI Insights (Last 30 Days)">
+          <DashboardAIInsights accountId={activeAccountId} />
+        </Card>
 
         {/* Footer */}
         <div className="pt-4 pb-2 text-center">

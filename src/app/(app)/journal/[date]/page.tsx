@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { getDailyJournalByDate, getJournalTradeLinks } from '@/lib/db/journal';
 import { createServerClient } from '@/lib/supabase/server';
 import { Topbar } from '@/components/layout/Topbar';
@@ -10,6 +11,7 @@ interface PageProps {
 
 export default async function DailyJournalPage({ params }: PageProps) {
   const { date } = params;
+  const activeAccountId = cookies().get('active_account_id')?.value ?? null;
 
   const supabase = createServerClient();
   const {
@@ -44,6 +46,7 @@ export default async function DailyJournalPage({ params }: PageProps) {
             initial={entry}
             dateTrades={(dateTrades as Trade[]) ?? []}
             initialLinkedTradeIds={linkedTradeIds}
+            accountId={activeAccountId}
           />
         </div>
       </div>

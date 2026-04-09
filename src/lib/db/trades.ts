@@ -62,7 +62,8 @@ export async function getTradeById(id: string): Promise<TradeWithDetails | null>
     .select(`
       *,
       trade_tag_links(trade_tags(id, name, color, user_id)),
-      trade_journal_entries(*)
+      trade_journal_entries(*),
+      trade_strategy_links(trading_strategies(id, name, description, color, user_id, created_at))
     `)
     .eq('id', id)
     .eq('user_id', user.id)
@@ -74,14 +75,17 @@ export async function getTradeById(id: string): Promise<TradeWithDetails | null>
   const tags = ((trade as any).trade_tag_links?.map((l: any) => l.trade_tags).filter(Boolean) ?? []) as import('../types').TradeTag[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const journal = (trade as any).trade_journal_entries ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const strategies = ((trade as any).trade_strategy_links?.map((l: any) => l.trading_strategies).filter(Boolean) ?? []) as import('../types').TradingStrategy[];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  const { trade_tag_links: _tagLinks, trade_journal_entries: _journalEntries, ...tradeData } = trade as any;
+  const { trade_tag_links: _tagLinks, trade_journal_entries: _journalEntries, trade_strategy_links: _stratLinks, ...tradeData } = trade as any;
 
   return {
     ...tradeData,
     tags,
     journal,
+    strategies,
   };
 }
 

@@ -20,6 +20,8 @@ Edgelog is a **personal trading journal** web application. It lets traders log t
 | Progress Bar | nextjs-toploader |
 | Background Jobs | Inngest |
 | Error Monitoring | Sentry (`@sentry/nextjs`) |
+| AI Coaching | Groq API (`groq-sdk`, model: `llama-3.3-70b-versatile`) |
+| Markdown Rendering | `react-markdown` + `remark-gfm` |
 
 Frontend and backend are **colocated** in one Next.js project. There is no separate API server. Database access happens in Server Components and API Routes directly via the Supabase client.
 
@@ -52,13 +54,17 @@ src/app/
 │   ├── journal/
 │   │   ├── page.tsx                # Journal entry list
 │   │   └── [date]/page.tsx         # Daily journal editor
+│   ├── playbooks/page.tsx          # Manage trading strategies/playbooks
 │   └── settings/page.tsx           # Profile + Accounts tabs
 ├── api/
 │   ├── trades/
 │   │   ├── import/route.ts         # POST — queue CSV import job via Inngest
 │   │   └── export/route.ts         # GET — download trades as CSV (with filters)
 │   ├── jobs/[id]/route.ts          # GET — poll import job status
-│   └── inngest/route.ts            # Inngest serve endpoint (GET/POST/PUT)
+│   ├── inngest/route.ts            # Inngest serve endpoint (GET/POST/PUT)
+│   └── ai/
+│       ├── analyze-day/route.ts    # POST — daily AI coaching via Groq
+│       └── analyze-behavior/route.ts  # POST — behavioral pattern analysis via Groq
 └── auth/callback/route.ts          # Supabase OAuth callback
 ```
 
@@ -120,7 +126,8 @@ The dashboard (`/dashboard`) is a Server Component that fetches all closed trade
 - Displays: instrument, type, direction, entry/exit price, size, timestamps, stop loss, take profit, commission, status.
 - P&L Summary panel: gross P&L, net P&L, R-multiple.
 - Inline **tag management** via `TagSelector`.
-- Inline **trade journal** (notes, star rating 1–5, strategy, screenshot upload).
+- Inline **strategy/playbook selection** via `StrategySelector` — toggleable colored badges linked to `trade_strategy_links`.
+- Inline **trade journal** (notes, star rating 1–5, screenshot upload). The old strategy text field has been removed; use playbooks instead.
 - Back, Edit, and Delete actions in the topbar.
 
 **Create Trade (`/trades/new`):**
@@ -196,7 +203,38 @@ Two separate but interconnected journal types:
 
 ---
 
-### 6. Settings
+### 6. Playbooks (Trading Strategies)
+
+- Users define named strategies/playbooks at `/playbooks` (accessible via sidebar).
+- Each playbook has a `name`, optional `description`, and `color` (7-color palette).
+- `PlaybooksManager` client component handles inline create/delete.
+- On the trade detail page, `StrategySelector` displays all strategies as togglable colored badges. Selecting a strategy immediately writes to `trade_strategy_links`. No inline creation from the trade page — go to `/playbooks` to manage.
+- Links stored in `trade_strategy_links` (junction table). Deleting a strategy cascades to remove all its trade links.
+
+---
+
+### 7. AI Analyzer (Groq)
+
+Requires `GROQ_API_KEY`. Uses `llama-3.3-70b-versatile` via the Groq API.
+
+**Daily coaching** (`POST /api/ai/analyze-day`):
+- Triggered from the daily journal page via an "Analyze with AI" button in `DailyJournalEditor`.
+- Fetches all trades for that day (no account filter — matches what the journal page shows), the daily journal entry (mood + content), and strategy tags.
+- Builds a prompt covering overall assessment, strategy adherence, mindset patterns, and one improvement for tomorrow.
+- Response rendered as markdown in an indigo AI Coach card.
+
+**Behavioral insights** (`POST /api/ai/analyze-behavior`):
+- Triggered from the dashboard via `DashboardAIInsights` (lazy-loaded with `next/dynamic`).
+- Fetches the most recent 200 closed trades for the active account (no hard date cutoff — avoids empty results for accounts with older data).
+- Computes: win rate, total P&L, strategy breakdown (win rate + avg R per strategy), best day-of-week, best hour-of-day.
+- Builds a prompt covering pattern observations, which strategy to double down on vs. avoid, a behavioral blind spot, and a single prioritized recommendation.
+- Response rendered as markdown in the same indigo AI Coach card.
+
+**Markdown rendering:** both AI outputs use the shared `AIAnalysis` component (`src/components/ui/AIAnalysis.tsx`) which wraps `react-markdown` + `remark-gfm` with Tailwind prose styles.
+
+---
+
+### 8. Settings
 
 `/settings` uses URL-based tabs (`searchParams.tab`):
 
@@ -208,7 +246,7 @@ Two separate but interconnected journal types:
 
 ---
 
-### 7. Marketing / Landing Page
+### 9. Marketing / Landing Page
 
 - Public page at `/` with sections: Hero, Features, How It Works, App Preview, Testimonials, Pricing, FAQ, CTA, Footer.
 - `MarketingNav` — sticky nav with mobile hamburger menu (client component).
@@ -231,10 +269,12 @@ All tables have **Row-Level Security (RLS)** — users can only read/write their
 | `trades` | Core trade records |
 | `trade_tags` | User-defined tags (name, color) |
 | `trade_tag_links` | Junction: trades ↔ tags |
-| `trade_journal_entries` | Per-trade notes, rating, strategy, screenshot path |
+| `trade_journal_entries` | Per-trade notes, rating, screenshot path (strategy field deprecated) |
 | `daily_journal` | Daily reflection with mood |
 | `daily_journal_trade_links` | Junction: daily_journal ↔ trades |
 | `import_jobs` | Tracks async CSV import status (pending → processing → completed/failed) |
+| `trading_strategies` | User-defined playbooks (name, description, color). Unique per `(user_id, name)` |
+| `trade_strategy_links` | Junction: trades ↔ strategies |
 
 Trade deduplication key: `(user_id, instrument, entry_datetime)`.
 
@@ -247,10 +287,11 @@ Trade deduplication key: `(user_id, instrument, entry_datetime)`.
 
 | File | Responsibility |
 |---|---|
-| `trades.ts` | `getTrades`, `getTradeById` (single query with nested select), `getRecentTrades` (DB-limited), `createTrade`, `updateTrade`, `deleteTrade` |
+| `trades.ts` | `getTrades`, `getTradeById` (single query with tags + journal + strategy links), `getRecentTrades` (DB-limited), `createTrade`, `updateTrade`, `deleteTrade` |
 | `dashboard.ts` | `getDashboardTrades` — closed trades with optional date/account filter, wrapped in `unstable_cache` (5 min, tag `dashboard-trades`) |
 | `journal.ts` | Daily journal CRUD, `getTradeJournalDates` (via SQL `GROUP BY` RPC), trade links |
-| `tags.ts` | Tag CRUD |
+| `tags.ts` | Tag CRUD + `setTradeTagLinks` |
+| `strategies.ts` | Playbook CRUD + `setTradeStrategyLinks` + `getStrategiesForTrade` |
 | `accounts.ts` | Account queries |
 
 ---
@@ -384,6 +425,7 @@ SUPABASE_SERVICE_ROLE_KEY=        # used by Inngest background function (bypasse
 INNGEST_SIGNING_KEY=              # from inngest.com dashboard — authenticates function calls
 INNGEST_EVENT_KEY=                # from inngest.com dashboard — authenticates event sends
 INNGEST_DEV=1                     # local dev only — routes to local Inngest Dev Server, skips signature check
+GROQ_API_KEY=                     # from console.groq.com — required for AI analyzer routes
 ```
 
 ---

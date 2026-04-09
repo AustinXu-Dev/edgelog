@@ -6,6 +6,7 @@ import { createBrowserClient } from '@/lib/supabase/client';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { MoodPicker } from '@/components/journal/MoodPicker';
+import { AIAnalysis } from '@/components/ui/AIAnalysis';
 import { formatCurrency, formatDate, pnlColor } from '@/lib/utils/formatters';
 import type { DailyJournal, Mood, Trade } from '@/lib/types';
 
@@ -14,9 +15,10 @@ interface Props {
   initial: DailyJournal | null;
   dateTrades: Trade[];
   initialLinkedTradeIds: string[];
+  accountId: string | null;
 }
 
-export function DailyJournalEditor({ date, initial, dateTrades, initialLinkedTradeIds }: Props) {
+export function DailyJournalEditor({ date, initial, dateTrades, initialLinkedTradeIds, accountId }: Props) {
   const supabase = createBrowserClient();
   const router = useRouter();
   const [content, setContent] = useState(initial?.content ?? '');
@@ -26,6 +28,29 @@ export function DailyJournalEditor({ date, initial, dateTrades, initialLinkedTra
   const [saved, setSaved] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analyzeError, setAnalyzeError] = useState('');
+
+  async function handleAnalyze() {
+    setAnalyzing(true);
+    setAnalyzeError('');
+    setAnalysis(null);
+    try {
+      const res = await fetch('/api/ai/analyze-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, accountId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Analysis failed');
+      setAnalysis(json.analysis);
+    } catch (err) {
+      setAnalyzeError(err instanceof Error ? err.message : 'Analysis failed');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   function toggleTrade(tradeId: string) {
     setLinkedTradeIds((prev) =>
@@ -142,6 +167,14 @@ export function DailyJournalEditor({ date, initial, dateTrades, initialLinkedTra
             <i className="lni lni-arrow-left text-sm" />Back to Journal
           </Button>
         )}
+      </div>
+
+      <div className="border-t border-gray-100 pt-4">
+        <Button variant="secondary" size="sm" onClick={handleAnalyze} loading={analyzing} type="button">
+          {!analyzing && <i className="lni lni-magic-wand text-sm" />}Analyze with AI
+        </Button>
+        {analyzeError && <p className="mt-2 text-sm text-red-600">{analyzeError}</p>}
+        {analysis && <div className="mt-3"><AIAnalysis content={analysis} /></div>}
       </div>
     </div>
   );

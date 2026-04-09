@@ -11,6 +11,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: 'lni-home-2' },
   { href: '/trades', label: 'Trades', icon: 'lni-bar-chart-4' },
   { href: '/journal', label: 'Journal', icon: 'lni-notebook-1' },
+  { href: '/playbooks', label: 'Playbooks', icon: 'lni-book-1' },
   { href: '/settings', label: 'Settings', icon: 'lni-gear-1' },
 ];
 
