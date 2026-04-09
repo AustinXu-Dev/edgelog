@@ -57,9 +57,19 @@ export interface Trade {
   created_at: string;
 }
 
+export interface TradingStrategy {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  created_at: string;
+}
+
 export interface TradeWithDetails extends Trade {
   tags?: TradeTag[];
   journal?: TradeJournalEntry | null;
+  strategies?: TradingStrategy[];
 }
 
 export interface TradeTag {

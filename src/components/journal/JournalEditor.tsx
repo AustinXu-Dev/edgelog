@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
-import { Input } from '@/components/ui/Input';
 import { StarRating } from '@/components/ui/StarRating';
 import type { TradeJournalEntry } from '@/lib/types';
 
@@ -17,7 +16,6 @@ export function JournalEditor({ tradeId, initial }: Props) {
   const supabase = createBrowserClient();
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [rating, setRating] = useState<number | null>(initial?.rating ?? null);
-  const [strategy, setStrategy] = useState(initial?.strategy ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -42,7 +40,6 @@ export function JournalEditor({ tradeId, initial }: Props) {
         user_id: user.id,
         notes: notes || null,
         rating: rating,
-        strategy: strategy || null,
       },
       { onConflict: 'trade_id' }
     );
@@ -62,13 +59,6 @@ export function JournalEditor({ tradeId, initial }: Props) {
         <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Rating</label>
         <StarRating value={rating} onChange={setRating} />
       </div>
-
-      <Input
-        label="Strategy / Playbook"
-        value={strategy}
-        onChange={(e) => setStrategy(e.target.value)}
-        placeholder="e.g. Breakout, VWAP reclaim..."
-      />
 
       <Textarea
         label="Notes & Reflection"
