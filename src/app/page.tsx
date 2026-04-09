@@ -12,6 +12,8 @@ import {
   LayoutDashboard,
   Settings,
   Plus,
+  BookMarked,
+  Sparkles,
 } from 'lucide-react';
 import { MarketingNav } from '@/components/marketing/MarketingNav';
 import { FAQAccordion } from '@/components/marketing/FAQAccordion';
@@ -43,6 +45,16 @@ const features = [
     icon: BarChart3,
     title: 'Visual Analytics',
     description: 'Interactive charts powered by Recharts. Spot patterns across instruments, sessions, and days.',
+  },
+  {
+    icon: BookMarked,
+    title: 'Playbooks',
+    description: 'Define your named setups and tag them to every trade. See exactly which strategies are working — and which ones are costing you.',
+  },
+  {
+    icon: Sparkles,
+    title: 'AI Coach',
+    description: 'On-demand AI analysis of your sessions and behavioral patterns. Get actionable feedback on what to double down on and what to cut.',
   },
   {
     icon: Lock,
@@ -84,6 +96,8 @@ const pricingFeatures = [
   'Per-trade notes & screenshots',
   'Multiple trading accounts',
   'Tag system',
+  'Playbooks & strategy tracking',
+  'AI coaching & pattern analysis',
 ];
 
 // ─── App mockup ───────────────────────────────────────────────────────────────

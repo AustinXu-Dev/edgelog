@@ -10,7 +10,7 @@ export function MarketingNav() {
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-3 items-center h-16">
+        <div className="flex items-center justify-between h-16 md:grid md:grid-cols-3">
           <Link href="/" className="font-semibold text-xl text-gray-900 tracking-tight">
             Edgelog
           </Link>
