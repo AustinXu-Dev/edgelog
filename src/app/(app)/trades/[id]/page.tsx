@@ -12,7 +12,8 @@ import { ScreenshotUploader } from '@/components/journal/ScreenshotUploader';
 import { TagSelector } from '@/components/trades/TagSelector';
 import { StrategySelector } from '@/components/trades/StrategySelector';
 import { DeleteTradeButton } from './DeleteTradeButton';
-import { formatCurrency, formatDatetime, pnlColor, formatR } from '@/lib/utils/formatters';
+import { formatCurrency, pnlColor, formatR } from '@/lib/utils/formatters';
+import { LocalDatetime } from '@/components/ui/LocalDatetime';
 
 interface PageProps {
   params: { id: string };
@@ -84,10 +85,10 @@ export default async function TradeDetailPage({ params }: PageProps) {
               <dd className="text-gray-900 font-mono">{trade.position_size}</dd>
 
               <dt className="text-gray-500">Entry Time</dt>
-              <dd className="text-gray-700">{formatDatetime(trade.entry_datetime)}</dd>
+              <dd className="text-gray-700"><LocalDatetime iso={trade.entry_datetime} /></dd>
 
               <dt className="text-gray-500">Exit Time</dt>
-              <dd className="text-gray-700">{trade.exit_datetime ? formatDatetime(trade.exit_datetime) : '—'}</dd>
+              <dd className="text-gray-700">{trade.exit_datetime ? <LocalDatetime iso={trade.exit_datetime} /> : '—'}</dd>
 
               <dt className="text-gray-500">Stop Loss</dt>
               <dd className="text-gray-700 font-mono">{trade.stop_loss_planned?.toFixed(4) ?? '—'}</dd>
