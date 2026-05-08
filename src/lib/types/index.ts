@@ -11,6 +11,17 @@ export interface TradingAccount {
   name: string;
   broker: string | null;
   initial_balance: number;
+  status: 'active' | 'breached' | 'archived';
+  created_at: string;
+}
+
+export interface BalanceAdjustment {
+  id: string;
+  account_id: string;
+  user_id: string;
+  amount: number;
+  type: 'withdrawal' | 'deposit';
+  note: string | null;
   created_at: string;
 }
 

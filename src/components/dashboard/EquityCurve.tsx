@@ -13,13 +13,14 @@ import type { EquityPoint } from '@/lib/types';
 
 interface Props {
   data: EquityPoint[];
+  initialBalance?: number;
 }
 
 function formatCurrency(v: number) {
   return v >= 0 ? `$${v.toLocaleString()}` : `-$${Math.abs(v).toLocaleString()}`;
 }
 
-export function EquityCurve({ data }: Props) {
+export function EquityCurve({ data, initialBalance = 0 }: Props) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
@@ -28,8 +29,17 @@ export function EquityCurve({ data }: Props) {
     );
   }
 
-  // With a single point there's no segment to draw — prepend a zero baseline so the line renders
-  const chartData = data.length === 1 ? [{ date: '', cumPnl: 0, pnl: 0 }, ...data] : data;
+  // Always prepend the initial balance as the starting point
+  const chartData = [{ date: '', cumPnl: initialBalance, pnl: 0 }, ...data];
+
+  // Dynamic Y-axis: zoom into the actual data range with 10% padding on each side
+  const allValues = [initialBalance, ...chartData.map((d) => d.cumPnl)];
+  const dataMin = Math.min(...allValues);
+  const dataMax = Math.max(...allValues);
+  const range = dataMax - dataMin || Math.abs(dataMin) * 0.1 || 100;
+  const padding = range * 0.15;
+  const yMin = Math.floor((dataMin - padding) / 100) * 100;
+  const yMax = Math.ceil((dataMax + padding) / 100) * 100;
 
   return (
     <ResponsiveContainer width="100%" height={220}>
@@ -42,6 +52,7 @@ export function EquityCurve({ data }: Props) {
           interval="preserveStartEnd"
         />
         <YAxis
+          domain={[yMin, yMax]}
           tick={{ fill: '#9ca3af', fontSize: 11 }}
           axisLine={false}
           tickLine={false}
@@ -52,9 +63,9 @@ export function EquityCurve({ data }: Props) {
           contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
           labelStyle={{ color: '#6b7280', fontSize: 11 }}
           itemStyle={{ color: '#111827', fontSize: 12 }}
-          formatter={(v) => [formatCurrency(Number(v)), 'P&L']}
+          formatter={(v) => [formatCurrency(Number(v)), 'Balance']}
         />
-        <ReferenceLine y={0} stroke="#e5e7eb" strokeDasharray="3 3" />
+        <ReferenceLine y={initialBalance} stroke="#e5e7eb" strokeDasharray="3 3" />
         <Line
           type="monotone"
           dataKey="cumPnl"

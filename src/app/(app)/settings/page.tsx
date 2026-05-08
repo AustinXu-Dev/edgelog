@@ -24,11 +24,11 @@ export default async function SettingsPage({
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const tab = searchParams.tab === 'accounts' ? 'accounts' : 'profile';
+  const tab = searchParams.tab === 'profile' ? 'profile' : 'accounts';
 
   const [profileResult, accounts] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
-    tab === 'accounts' ? getAccounts() : Promise.resolve([]),
+    getAccounts(),
   ]);
 
   const activeAccountId = cookies().get('active_account_id')?.value ?? null;
@@ -37,16 +37,22 @@ export default async function SettingsPage({
     <div className="flex flex-col h-full">
       <Topbar title="Settings" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="max-w-lg space-y-4">
+        <div className="space-y-4">
           {/* Tab navigation */}
           <div className="flex border-b border-gray-200">
-            <Link href="/settings" className={tabClass(tab === 'profile')}>
-              Profile
-            </Link>
-            <Link href="/settings?tab=accounts" className={tabClass(tab === 'accounts')}>
+            <Link href="/settings" className={tabClass(tab === 'accounts')}>
               Accounts
             </Link>
+            <Link href="/settings?tab=profile" className={tabClass(tab === 'profile')}>
+              Profile
+            </Link>
           </div>
+
+          {tab === 'accounts' && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <AccountsTab accounts={accounts} activeAccountId={activeAccountId} />
+            </div>
+          )}
 
           {tab === 'profile' && (
             <>
@@ -63,12 +69,6 @@ export default async function SettingsPage({
               </div>
               <DangerZone userEmail={user.email ?? ''} />
             </>
-          )}
-
-          {tab === 'accounts' && (
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-              <AccountsTab accounts={accounts} activeAccountId={activeAccountId} />
-            </div>
           )}
         </div>
       </div>

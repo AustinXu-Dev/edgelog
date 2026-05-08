@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@/lib/supabase/server';
+import { updateAccountStatus, createBalanceAdjustment } from '@/lib/db/accounts';
+import type { TradingAccount } from '@/lib/types';
 
 export async function setActiveAccount(accountId: string | null) {
   if (accountId) {
@@ -88,6 +90,40 @@ export async function deleteAccountAction(
   const activeAccountId = cookies().get('active_account_id')?.value;
   if (activeAccountId === id) cookies().delete('active_account_id');
 
+  revalidatePath('/', 'layout');
+  return {};
+}
+
+export async function updateAccountStatusAction(
+  id: string,
+  status: TradingAccount['status']
+): Promise<{ error?: string }> {
+  const success = await updateAccountStatus(id, status);
+  if (!success) return { error: 'Failed to update account status' };
+  revalidatePath('/', 'layout');
+  return {};
+}
+
+export async function recordWithdrawalAction(
+  accountId: string,
+  amount: number,
+  note?: string
+): Promise<{ error?: string }> {
+  if (amount <= 0) return { error: 'Amount must be greater than 0' };
+  const result = await createBalanceAdjustment(accountId, -amount, 'withdrawal', note);
+  if (!result) return { error: 'Failed to record withdrawal' };
+  revalidatePath('/', 'layout');
+  return {};
+}
+
+export async function recordDepositAction(
+  accountId: string,
+  amount: number,
+  note?: string
+): Promise<{ error?: string }> {
+  if (amount <= 0) return { error: 'Amount must be greater than 0' };
+  const result = await createBalanceAdjustment(accountId, amount, 'deposit', note);
+  if (!result) return { error: 'Failed to record deposit' };
   revalidatePath('/', 'layout');
   return {};
 }

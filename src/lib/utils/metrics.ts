@@ -29,12 +29,12 @@ export function calcMetrics(trades: Trade[]): DashboardMetrics {
   };
 }
 
-export function buildEquityCurve(trades: Trade[]): EquityPoint[] {
+export function buildEquityCurve(trades: Trade[], initialBalance = 0): EquityPoint[] {
   const closed = trades
     .filter((t) => t.status === 'closed' && t.net_pnl !== null && t.exit_datetime)
     .sort((a, b) => new Date(a.exit_datetime!).getTime() - new Date(b.exit_datetime!).getTime());
 
-  let cumPnl = 0;
+  let cumPnl = initialBalance;
   return closed.map((t) => {
     cumPnl += t.net_pnl ?? 0;
     return {
