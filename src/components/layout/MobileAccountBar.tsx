@@ -11,6 +11,15 @@ interface Props {
   initialAccounts: TradingAccount[];
 }
 
+function StatusDot({ status }: { status: TradingAccount['status'] }) {
+  if (status === 'active') return null;
+  return (
+    <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
+      status === 'breached' ? 'bg-red-500' : 'bg-gray-400'
+    }`} />
+  );
+}
+
 export function MobileAccountBar({ activeAccountId, initialAccounts }: Props) {
   const supabase = createBrowserClient();
   const router = useRouter();
@@ -20,11 +29,30 @@ export function MobileAccountBar({ activeAccountId, initialAccounts }: Props) {
   const [newName, setNewName] = useState('');
   const [newBalance, setNewBalance] = useState('');
   const [saving, setSaving] = useState(false);
+  const [cumulativePnl, setCumulativePnl] = useState<number | null>(null);
+  const [totalAdjustments, setTotalAdjustments] = useState<number>(0);
 
   // Sync when server re-renders with updated accounts (e.g. after Settings creates one)
   useEffect(() => {
     setAccounts(initialAccounts);
   }, [initialAccounts]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!activeAccountId) { setCumulativePnl(null); setTotalAdjustments(0); return; }
+
+    supabase
+      .rpc('get_account_pnl', { p_account_id: activeAccountId })
+      .then(({ data }) => setCumulativePnl(data ?? 0));
+
+    supabase
+      .from('account_balance_adjustments')
+      .select('amount')
+      .eq('account_id', activeAccountId)
+      .then(({ data }) => {
+        if (!data || data.length === 0) { setTotalAdjustments(0); return; }
+        setTotalAdjustments(data.reduce((sum, row) => sum + row.amount, 0));
+      });
+  }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSwitch(id: string | null) {
     await setActiveAccount(id);
@@ -58,6 +86,10 @@ export function MobileAccountBar({ activeAccountId, initialAccounts }: Props) {
 
   const activeAccount = accounts.find((a) => a.id === activeAccountId) ?? null;
   const label = activeAccount ? activeAccount.name : 'All accounts';
+  const currentBalance =
+    activeAccount && cumulativePnl !== null
+      ? activeAccount.initial_balance + cumulativePnl + totalAdjustments
+      : null;
 
   return (
     <div className="md:hidden relative border-b border-gray-200 bg-white z-40">
@@ -68,7 +100,17 @@ export function MobileAccountBar({ activeAccountId, initialAccounts }: Props) {
       >
         <div className="flex items-center gap-2 text-gray-600">
           <i className="lni lni-briefcase text-base text-gray-400" />
-          <span className="font-medium text-gray-800">{label}</span>
+          <div className="flex items-center gap-1.5">
+            {activeAccount && <StatusDot status={activeAccount.status} />}
+            <span className={`font-medium ${activeAccount && activeAccount.status !== 'active' ? 'text-gray-500' : 'text-gray-800'}`}>
+              {label}
+            </span>
+          </div>
+          {currentBalance !== null && (
+            <span className="text-xs text-gray-500">
+              ${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          )}
         </div>
         <i className={`lni lni-chevron-down text-gray-400 text-xs transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -90,13 +132,26 @@ export function MobileAccountBar({ activeAccountId, initialAccounts }: Props) {
             <button
               key={a.id}
               onClick={() => handleSwitch(a.id)}
-              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${
+              className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 a.id === activeAccountId ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              {a.name}
+              <StatusDot status={a.status} />
+              <span className={a.status !== 'active' ? 'italic' : ''}>{a.name}</span>
+              {a.status !== 'active' && (
+                <span className={`text-[10px] uppercase font-semibold ml-auto ${
+                  a.status === 'breached' ? 'text-red-500' : 'text-gray-400'
+                }`}>
+                  {a.status}
+                </span>
+              )}
             </button>
           ))}
+
+          {/* Note about withdrawals */}
+          <p className="text-xs text-gray-400 px-3 pt-1">
+            Manage account status &amp; withdrawals in Settings.
+          </p>
 
           {/* Add account form */}
           {adding ? (
