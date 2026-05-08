@@ -55,18 +55,13 @@ export function AccountSwitcher({ activeAccountId, initialAccounts }: Props) {
   useEffect(() => {
     if (!activeAccountId) { setCumulativePnl(null); setTotalAdjustments(0); return; }
 
-    supabase
-      .rpc('get_account_pnl', { p_account_id: activeAccountId })
-      .then(({ data }) => setCumulativePnl(data ?? 0));
-
-    supabase
-      .from('account_balance_adjustments')
-      .select('amount')
-      .eq('account_id', activeAccountId)
-      .then(({ data }) => {
-        if (!data || data.length === 0) { setTotalAdjustments(0); return; }
-        setTotalAdjustments(data.reduce((sum, row) => sum + row.amount, 0));
-      });
+    Promise.all([
+      supabase.rpc('get_account_pnl', { p_account_id: activeAccountId }),
+      supabase.from('account_balance_adjustments').select('amount').eq('account_id', activeAccountId),
+    ]).then(([{ data: pnlData }, { data: adjData }]) => {
+      setCumulativePnl(pnlData ?? 0);
+      setTotalAdjustments(adjData && adjData.length > 0 ? adjData.reduce((sum, row) => sum + row.amount, 0) : 0);
+    });
   }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSwitch(id: string | null) {

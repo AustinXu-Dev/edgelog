@@ -42,6 +42,13 @@ export function CsvImporter() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_SIZE) {
+      setErrors([{ row: 1, message: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 10 MB.` }]);
+      setPreview(null);
+      return;
+    }
+
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,

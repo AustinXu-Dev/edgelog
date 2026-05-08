@@ -35,18 +35,13 @@ function AccountBalanceRow({ accountId, initialBalance }: { accountId: string; i
   const [adjustments, setAdjustments] = useState<number>(0);
 
   useEffect(() => {
-    supabase
-      .rpc('get_account_pnl', { p_account_id: accountId })
-      .then(({ data }) => setPnl(data ?? 0));
-
-    supabase
-      .from('account_balance_adjustments')
-      .select('amount')
-      .eq('account_id', accountId)
-      .then(({ data }) => {
-        if (!data || data.length === 0) return;
-        setAdjustments(data.reduce((sum, r) => sum + r.amount, 0));
-      });
+    Promise.all([
+      supabase.rpc('get_account_pnl', { p_account_id: accountId }),
+      supabase.from('account_balance_adjustments').select('amount').eq('account_id', accountId),
+    ]).then(([{ data: pnlData }, { data: adjData }]) => {
+      setPnl(pnlData ?? 0);
+      setAdjustments(adjData && adjData.length > 0 ? adjData.reduce((sum, r) => sum + r.amount, 0) : 0);
+    });
   }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const balance = pnl !== null ? initialBalance + pnl + adjustments : null;

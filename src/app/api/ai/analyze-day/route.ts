@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { createServerClient } from '@/lib/supabase/server';
 
+// In-memory cache: key → { result, expires }
+const cache = new Map<string, { result: string; expires: number }>();
+// Dedup: track in-flight keys so double-clicks return 429 instead of firing two Groq calls
+const inFlight = new Set<string>();
+
 export async function POST(req: Request) {
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const supabase = createServerClient();
@@ -11,6 +16,20 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { date } = await req.json() as { date: string; accountId?: string | null };
+
+  const cacheKey = `${user.id}:${date}`;
+
+  // Return cached result if still fresh (30 min)
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    return NextResponse.json({ analysis: cached.result });
+  }
+
+  // Reject duplicate concurrent requests for the same user+date
+  if (inFlight.has(cacheKey)) {
+    return NextResponse.json({ error: 'Analysis already in progress' }, { status: 429 });
+  }
+  inFlight.add(cacheKey);
 
   const next = new Date(date);
   next.setDate(next.getDate() + 1);
@@ -71,12 +90,17 @@ Provide:
 
 Be concise and direct (under 300 words).`;
 
-  const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 600,
-  });
+  try {
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 600,
+    });
 
-  const analysis = completion.choices[0]?.message?.content ?? '';
-  return NextResponse.json({ analysis });
+    const analysis = completion.choices[0]?.message?.content ?? '';
+    cache.set(cacheKey, { result: analysis, expires: Date.now() + 30 * 60 * 1000 });
+    return NextResponse.json({ analysis });
+  } finally {
+    inFlight.delete(cacheKey);
+  }
 }
