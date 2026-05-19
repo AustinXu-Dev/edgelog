@@ -45,14 +45,26 @@ export function buildEquityCurve(trades: Trade[], initialBalance = 0): EquityPoi
   });
 }
 
-export function buildPnlByDow(trades: Trade[]): { dow: number; label: string; total_pnl: number }[] {
+function getLocalHour(iso: string, timezone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: timezone }).formatToParts(new Date(iso));
+  const h = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+  return h === 24 ? 0 : h; // some locales return 24 for midnight
+}
+
+function getLocalDow(iso: string, timezone: string): number {
+  const days: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const parts = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: timezone }).formatToParts(new Date(iso));
+  return days[parts.find((p) => p.type === 'weekday')?.value ?? 'Sun'] ?? 0;
+}
+
+export function buildPnlByDow(trades: Trade[], timezone = 'UTC'): { dow: number; label: string; total_pnl: number }[] {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const map: Record<number, number> = {};
 
   trades
     .filter((t) => t.status === 'closed' && t.net_pnl !== null && t.entry_datetime)
     .forEach((t) => {
-      const dow = new Date(t.entry_datetime).getDay();
+      const dow = getLocalDow(t.entry_datetime, timezone);
       map[dow] = (map[dow] ?? 0) + (t.net_pnl ?? 0);
     });
 
@@ -63,13 +75,13 @@ export function buildPnlByDow(trades: Trade[]): { dow: number; label: string; to
   }));
 }
 
-export function buildPnlByHour(trades: Trade[]): PnLByHourRow[] {
+export function buildPnlByHour(trades: Trade[], timezone = 'UTC'): PnLByHourRow[] {
   const map: Record<number, number> = {};
 
   trades
     .filter((t) => t.status === 'closed' && t.net_pnl !== null && t.entry_datetime)
     .forEach((t) => {
-      const hour = new Date(t.entry_datetime).getHours();
+      const hour = getLocalHour(t.entry_datetime, timezone);
       map[hour] = (map[hour] ?? 0) + (t.net_pnl ?? 0);
     });
 
