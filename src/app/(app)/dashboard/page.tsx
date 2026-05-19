@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { getDashboardTrades } from '@/lib/db/dashboard';
 import { getRecentTrades } from '@/lib/db/trades';
 import { getAccounts } from '@/lib/db/accounts';
+import { createServerClient } from '@/lib/supabase/server';
 import {
   calcMetrics,
   buildEquityCurve,
@@ -35,6 +36,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const to = searchParams.to;
   const activeAccountId = cookies().get('active_account_id')?.value ?? null;
 
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('timezone').eq('id', user.id).single()
+    : { data: null };
+  const timezone = profile?.timezone ?? 'UTC';
+
   const [trades, recentTrades, accounts] = await Promise.all([
     getDashboardTrades(from, to, activeAccountId),
     getRecentTrades(10, activeAccountId),
@@ -46,8 +54,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const metrics = calcMetrics(trades);
   const equityData = buildEquityCurve(trades, initialBalance);
-  const dowData = buildPnlByDow(trades);
-  const hourData = buildPnlByHour(trades);
+  const dowData = buildPnlByDow(trades, timezone);
+  const hourData = buildPnlByHour(trades, timezone);
   const instrumentData = calcPnlByInstrument(trades);
 
   const now = new Date();

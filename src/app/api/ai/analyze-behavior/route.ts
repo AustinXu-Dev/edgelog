@@ -17,6 +17,9 @@ export async function POST(req: Request) {
 
   const { accountId } = await req.json() as { accountId?: string | null };
 
+  const { data: profile } = await supabase.from('profiles').select('timezone').eq('id', user.id).single();
+  const timezone = profile?.timezone ?? 'UTC';
+
   const cacheKey = `${user.id}:${accountId ?? 'all'}`;
 
   // Return cached result if still fresh (30 min)
@@ -85,8 +88,12 @@ export async function POST(req: Request) {
   const hourMap = new Map<number, number>();
   for (const t of tradeList) {
     const d = new Date(t.entry_datetime);
-    const dow = d.getDay();
-    const hour = d.getHours();
+    const dowParts = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: timezone }).formatToParts(d);
+    const dowNames = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 } as Record<string, number>;
+    const dow = dowNames[dowParts.find((p) => p.type === 'weekday')?.value ?? 'Sun'] ?? 0;
+    const hourParts = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: timezone }).formatToParts(d);
+    const rawHour = parseInt(hourParts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+    const hour = rawHour === 24 ? 0 : rawHour;
     dowMap.set(dow, (dowMap.get(dow) ?? 0) + (t.net_pnl ?? 0));
     hourMap.set(hour, (hourMap.get(hour) ?? 0) + (t.net_pnl ?? 0));
   }
