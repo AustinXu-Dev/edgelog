@@ -8,11 +8,11 @@ export default async function NewTradePage() {
   const allTags = await getTags();
   const activeAccountId = cookies().get('active_account_id')?.value ?? null;
 
-  // Check if the active account is non-active (breached/archived)
+  // Check if the active account is breached or archived
   if (activeAccountId) {
     const accounts = await getAccounts();
     const activeAccount = accounts.find((a) => a.id === activeAccountId);
-    if (activeAccount && activeAccount.status !== 'active') {
+    if (activeAccount && (activeAccount.status === 'breached' || activeAccount.status === 'archived')) {
       return (
         <div className="flex flex-col h-full">
           <Topbar title="New Trade" />

@@ -11,7 +11,7 @@ export interface TradingAccount {
   name: string;
   broker: string | null;
   initial_balance: number;
-  status: 'active' | 'breached' | 'archived';
+  status: 'active' | 'breached' | 'archived' | 'passed';
   created_at: string;
 }
 

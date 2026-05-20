@@ -21,6 +21,7 @@ function StatusBadge({ status }: { status: TradingAccount['status'] }) {
     active: '',
     breached: 'bg-red-50 text-red-600',
     archived: 'bg-gray-100 text-gray-500',
+    passed: 'bg-emerald-50 text-emerald-600',
   };
   return (
     <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${styles[status]}`}>
@@ -218,6 +219,11 @@ function WithdrawDepositForm({ accountId, onDone }: { accountId: string; onDone:
 export function AccountsTab({ accounts: initialAccounts, activeAccountId }: Props) {
   const router = useRouter();
   const [accounts, setAccounts] = useState<TradingAccount[]>(initialAccounts);
+
+  // Sync local state when server re-renders after router.refresh()
+  useEffect(() => {
+    setAccounts(initialAccounts);
+  }, [initialAccounts]); // eslint-disable-line react-hooks/exhaustive-deps
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleteMode, setDeleteMode] = useState<DeleteMode>('keep');
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -228,7 +234,9 @@ export function AccountsTab({ accounts: initialAccounts, activeAccountId }: Prop
   const [error, setError] = useState('');
   const [showAdjustForm, setShowAdjustForm] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
-  const [hideInactive, setHideInactive] = useState(false);
+  const [hideInactive, setHideInactive] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem('hideInactiveAccounts') === 'true'
+  );
 
   function openConfirm(id: string) {
     setConfirmDelete(id);
@@ -293,13 +301,13 @@ export function AccountsTab({ accounts: initialAccounts, activeAccountId }: Prop
       {inactiveCount > 0 && (
         <div className="flex justify-end">
           <button
-            onClick={() => setHideInactive((v) => !v)}
+            onClick={() => setHideInactive((v) => { const next = !v; localStorage.setItem('hideInactiveAccounts', String(next)); return next; })}
             className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1.5"
           >
             <span className={`w-7 h-4 rounded-full transition-colors flex-shrink-0 ${hideInactive ? 'bg-blue-500' : 'bg-gray-300'}`}>
               <span className={`block w-3 h-3 bg-white rounded-full shadow mt-0.5 transition-transform ${hideInactive ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
             </span>
-            Hide breached / archived ({inactiveCount})
+            Hide non-active ({inactiveCount})
           </button>
         </div>
       )}
@@ -398,6 +406,7 @@ export function AccountsTab({ accounts: initialAccounts, activeAccountId }: Prop
                         className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-600 focus:outline-none focus:border-blue-400 disabled:opacity-50 cursor-pointer"
                       >
                         <option value="active">Active</option>
+                        <option value="passed">Passed</option>
                         <option value="breached">Breached</option>
                         <option value="archived">Archived</option>
                       </select>
@@ -414,7 +423,7 @@ export function AccountsTab({ accounts: initialAccounts, activeAccountId }: Prop
                   </div>
 
                   {/* Withdraw / Deposit */}
-                  {account.status === 'active' && (
+                  {(account.status === 'active' || account.status === 'passed') && (
                     <div className="mt-2">
                       {showAdjustForm === account.id ? (
                         <WithdrawDepositForm
