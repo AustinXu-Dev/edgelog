@@ -203,6 +203,7 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
           step="any"
           value={form.exit_price}
           onChange={(e) => updateField('exit_price', e.target.value)}
+          required={form.status === 'closed'}
           placeholder="0.00"
         />
         <Input
@@ -230,6 +231,7 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
           type="datetime-local"
           value={form.exit_datetime}
           onChange={(e) => updateField('exit_datetime', e.target.value)}
+          required={form.status === 'closed'}
         />
       </div>
 
@@ -241,7 +243,8 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
           step="any"
           value={form.stop_loss_planned}
           onChange={(e) => updateField('stop_loss_planned', e.target.value)}
-          placeholder="Optional"
+          required
+          placeholder="0.00"
         />
         <Input
           label="Take Profit (planned)"
@@ -249,7 +252,8 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
           step="any"
           value={form.take_profit_planned}
           onChange={(e) => updateField('take_profit_planned', e.target.value)}
-          placeholder="Optional"
+          required
+          placeholder="0.00"
         />
         <Input
           label="Commission"

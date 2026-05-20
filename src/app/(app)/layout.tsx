@@ -7,6 +7,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { MobileAccountBar } from '@/components/layout/MobileAccountBar';
 import { NoAccountBanner } from '@/components/layout/NoAccountBanner';
 import { HelpGuide } from '@/components/layout/HelpGuide';
+import { InactivityLogout } from '@/components/layout/InactivityLogout';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerClient();
@@ -41,6 +42,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       {/* Floating help button — mobile only */}
       <HelpGuide variant="floating" />
+
+      {/* Auto sign-out after 30 min inactivity */}
+      <InactivityLogout />
     </div>
   );
 }

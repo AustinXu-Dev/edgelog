@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { setActiveAccount, recordWithdrawalAction } from '@/app/actions/account';
 import type { TradingAccount } from '@/lib/types';
@@ -23,7 +23,7 @@ function StatusBadge({ status }: { status: TradingAccount['status'] }) {
   if (status === 'active') return null;
   return (
     <span className={`text-[9px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded ${
-      status === 'breached' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'
+      status === 'breached' ? 'bg-red-100 text-red-600' : status === 'passed' ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'
     }`}>
       {status}
     </span>
@@ -33,6 +33,7 @@ function StatusBadge({ status }: { status: TradingAccount['status'] }) {
 export function AccountSwitcher({ activeAccountId, initialAccounts }: Props) {
   const supabase = createBrowserClient();
   const router = useRouter();
+  const pathname = usePathname();
   const [accounts, setAccounts] = useState<TradingAccount[]>(initialAccounts);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
@@ -51,7 +52,8 @@ export function AccountSwitcher({ activeAccountId, initialAccounts }: Props) {
     setAccounts(initialAccounts);
   }, [initialAccounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch cumulative P&L and total adjustments for the active account
+  // Fetch cumulative P&L and total adjustments for the active account.
+  // Re-runs on pathname change so balance updates after a new trade is logged.
   useEffect(() => {
     if (!activeAccountId) { setCumulativePnl(null); setTotalAdjustments(0); return; }
 
@@ -62,7 +64,7 @@ export function AccountSwitcher({ activeAccountId, initialAccounts }: Props) {
       setCumulativePnl(pnlData ?? 0);
       setTotalAdjustments(adjData && adjData.length > 0 ? adjData.reduce((sum, row) => sum + row.amount, 0) : 0);
     });
-  }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeAccountId, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSwitch(id: string | null) {
     await setActiveAccount(id);
@@ -117,6 +119,11 @@ export function AccountSwitcher({ activeAccountId, initialAccounts }: Props) {
   }
 
   const activeAccount = accounts.find((a) => a.id === activeAccountId) ?? null;
+  const sortedAccounts = [...accounts].sort((a, b) => {
+    if (a.id === activeAccountId) return -1;
+    if (b.id === activeAccountId) return 1;
+    return 0;
+  });
   const currentBalance =
     activeAccount && cumulativePnl !== null
       ? activeAccount.initial_balance + cumulativePnl + totalAdjustments
@@ -131,12 +138,12 @@ export function AccountSwitcher({ activeAccountId, initialAccounts }: Props) {
         onChange={(e) => handleSwitch(e.target.value || null)}
         className="w-full text-xs bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400 cursor-pointer"
       >
-        <option value="">All accounts</option>
-        {accounts.map((a) => (
+        {sortedAccounts.map((a) => (
           <option key={a.id} value={a.id}>
             {a.name}{a.status !== 'active' ? ` (${a.status})` : ''}
           </option>
         ))}
+        <option value="">All accounts</option>
       </select>
 
       {/* Active account balance info */}
