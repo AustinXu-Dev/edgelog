@@ -21,7 +21,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const [accounts] = await Promise.all([getAccounts()]);
   const hasAccounts = accounts.length > 0;
-  const activeAccountId = cookies().get('active_account_id')?.value ?? null;
+
+  const cookieAccountId = cookies().get('active_account_id')?.value ?? null;
+  const cookieAccountExists = cookieAccountId ? accounts.some((a) => a.id === cookieAccountId) : false;
+  const firstActiveAccount = accounts.find((a) => a.status === 'active') ?? null;
+  // If the cookie is valid, use it. Otherwise default to the first active account (or null if none).
+  const activeAccountId = (cookieAccountExists ? cookieAccountId : firstActiveAccount?.id) ?? null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
