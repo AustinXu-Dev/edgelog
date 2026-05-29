@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase/client';
 interface Props {
   initialYear: number;
   initialMonth: number; // 0-indexed
-  accountId?: string | null;
+  accountIds: string[]; // empty = all accounts
 }
 
 interface DayData {
@@ -73,7 +73,7 @@ const MONTH_NAMES = [
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function CalendarHeatmap({ initialYear, initialMonth, accountId }: Props) {
+export function CalendarHeatmap({ initialYear, initialMonth, accountIds }: Props) {
   const [year, setYear] = useState(initialYear);
   const [month, setMonth] = useState(initialMonth);
   const [dailyData, setDailyData] = useState<DailyData>({});
@@ -83,7 +83,7 @@ export function CalendarHeatmap({ initialYear, initialMonth, accountId }: Props)
   const monthCache = useRef<Map<string, DailyData>>(new Map());
 
   const fetchMonth = useCallback(async (y: number, m: number) => {
-    const cacheKey = `${y}-${String(m + 1).padStart(2, '0')}-${accountId ?? 'all'}`;
+    const cacheKey = `${y}-${String(m + 1).padStart(2, '0')}-${accountIds.length === 0 ? 'all' : accountIds.join(',')}`;
 
     if (monthCache.current.has(cacheKey)) {
       setDailyData(monthCache.current.get(cacheKey)!);
@@ -107,7 +107,11 @@ export function CalendarHeatmap({ initialYear, initialMonth, accountId }: Props)
       .gte('exit_datetime', start)
       .lt('exit_datetime', end);
 
-    if (accountId) query = query.eq('account_id', accountId);
+    if (accountIds.length === 1) {
+      query = query.eq('account_id', accountIds[0]);
+    } else if (accountIds.length > 1) {
+      query = query.in('account_id', accountIds);
+    }
 
     const { data } = await query;
     const result: DailyData = {};
@@ -125,7 +129,7 @@ export function CalendarHeatmap({ initialYear, initialMonth, accountId }: Props)
     monthCache.current.set(cacheKey, result);
     setDailyData(result);
     setLoading(false);
-  }, [supabase, accountId]);
+  }, [supabase, accountIds]);
 
   useEffect(() => {
     fetchMonth(year, month);

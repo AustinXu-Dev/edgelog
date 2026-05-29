@@ -88,7 +88,8 @@ export function MobileAccountBar({ activeAccountId, initialAccounts }: Props) {
 
   const activeAccount = accounts.find((a) => a.id === activeAccountId) ?? null;
   const label = activeAccount ? activeAccount.name : 'All accounts';
-  const sortedAccounts = [...accounts].sort((a, b) => {
+  // Show active accounts + the currently selected account (even if non-active, so it stays visible)
+  const sortedAccounts = accounts.filter((a) => a.status === 'active' || a.id === activeAccountId).sort((a, b) => {
     if (a.id === activeAccountId) return -1;
     if (b.id === activeAccountId) return 1;
     return 0;
