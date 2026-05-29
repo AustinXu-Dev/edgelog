@@ -18,6 +18,7 @@ import { MetricCard } from '@/components/dashboard/MetricCard';
 import { CalendarHeatmap } from '@/components/dashboard/CalendarHeatmap';
 import { RecentTradesTable } from '@/components/dashboard/RecentTradesTable';
 import { DashboardFilterToggle } from '@/components/dashboard/DashboardFilterToggle';
+import { DashboardAccountPicker } from '@/components/dashboard/DashboardAccountPicker';
 import { Card } from '@/components/ui/Card';
 
 // Recharts is ~100KB gzipped — lazy-load so it doesn't block initial page render
@@ -28,14 +29,12 @@ const PnLByTimeOfDay    = dynamic(() => import('@/components/dashboard/PnLByTime
 const DashboardAIInsights = dynamic(() => import('@/components/dashboard/DashboardAIInsights').then(m => m.DashboardAIInsights), { ssr: false });
 
 interface PageProps {
-  searchParams: { from?: string; to?: string };
+  searchParams: { from?: string; to?: string; accs?: string };
 }
 
 export default async function DashboardPage({ searchParams }: PageProps) {
   const from = searchParams.from;
   const to = searchParams.to;
-  const activeAccountId = cookies().get('active_account_id')?.value ?? null;
-
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = user
@@ -43,14 +42,45 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     : { data: null };
   const timezone = profile?.timezone ?? 'UTC';
 
-  const [trades, recentTrades, accounts] = await Promise.all([
-    getDashboardTrades(from, to, activeAccountId),
-    getRecentTrades(10, activeAccountId),
-    getAccounts(),
+  const accounts = await getAccounts();
+
+  // Mirror the layout's fallback: if the cookie is missing or points to a deleted account,
+  // default to the first active account rather than showing all accounts.
+  const cookieAccountId = cookies().get('active_account_id')?.value ?? null;
+  const cookieAccountExists = cookieAccountId ? accounts.some((a) => a.id === cookieAccountId) : false;
+  const firstActiveAccount = accounts.find((a) => a.status === 'active') ?? null;
+  const activeAccountId = (cookieAccountExists ? cookieAccountId : firstActiveAccount?.id) ?? null;
+
+  // Resolve which account IDs to filter by:
+  // ?accs=all  → explicitly show all accounts (no filter)
+  // ?accs=id1,id2 → show only those accounts
+  // (absent)   → fall back to the resolved activeAccountId from cookie
+  let selectedAccountIds: string[];
+  if (searchParams.accs === 'all') {
+    selectedAccountIds = [];
+  } else if (searchParams.accs) {
+    const validIds = new Set(accounts.map((a) => a.id));
+    selectedAccountIds = searchParams.accs.split(',').filter((id) => validIds.has(id));
+  } else if (activeAccountId) {
+    selectedAccountIds = [activeAccountId];
+  } else {
+    selectedAccountIds = [];
+  }
+
+  const [trades, recentTrades] = await Promise.all([
+    getDashboardTrades(from, to, selectedAccountIds),
+    getRecentTrades(10, selectedAccountIds),
   ]);
 
-  const activeAccount = activeAccountId ? accounts.find((a) => a.id === activeAccountId) : null;
-  const initialBalance = activeAccount?.initial_balance ?? 0;
+  // Sum initial balances of selected accounts for the equity curve baseline
+  const initialBalance = selectedAccountIds.length > 0
+    ? accounts
+        .filter((a) => selectedAccountIds.includes(a.id))
+        .reduce((sum, a) => sum + a.initial_balance, 0)
+    : 0;
+
+  // Single account ID for features that only support one account (calendar, AI)
+  const singleAccountId = selectedAccountIds.length === 1 ? selectedAccountIds[0] : null;
 
   const metrics = calcMetrics(trades);
   const equityData = buildEquityCurve(trades, initialBalance);
@@ -69,7 +99,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     <div className="flex flex-col h-full">
       <Topbar
         title="Dashboard"
-        actions={<DashboardFilterToggle from={from} to={to} />}
+        actions={
+          <div className="flex items-center gap-2">
+            {accounts.length > 1 && (
+              <DashboardAccountPicker accounts={accounts} selectedIds={selectedAccountIds} />
+            )}
+            <DashboardFilterToggle from={from} to={to} />
+          </div>
+        }
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
         {/* KPI Row */}
@@ -119,7 +156,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             <CalendarHeatmap
               initialYear={calYear}
               initialMonth={calMonth}
-              accountId={activeAccountId}
+              accountIds={selectedAccountIds}
             />
           </Card>
           <Card
@@ -132,7 +169,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
         {/* AI Insights */}
         <Card title="AI Insights (Last 30 Days)">
-          <DashboardAIInsights accountId={activeAccountId} />
+          <DashboardAIInsights accountId={singleAccountId} />
         </Card>
 
         {/* Footer */}

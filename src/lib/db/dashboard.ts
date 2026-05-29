@@ -10,7 +10,7 @@ const fetchDashboardTrades = unstable_cache(
     userId: string,
     fromDate: string | undefined,
     toDate: string | undefined,
-    accountId: string | null
+    accountIds: string[] // empty = all accounts
   ): Promise<Trade[]> => {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,7 +26,12 @@ const fetchDashboardTrades = unstable_cache(
 
     if (fromDate) query = query.gte('entry_datetime', fromDate);
     if (toDate) query = query.lte('entry_datetime', toDate + 'T23:59:59Z');
-    if (accountId) query = query.eq('account_id', accountId);
+
+    if (accountIds.length === 1) {
+      query = query.eq('account_id', accountIds[0]);
+    } else if (accountIds.length > 1) {
+      query = query.in('account_id', accountIds);
+    }
 
     const { data } = await query;
     return (data ?? []) as Trade[];
@@ -38,7 +43,7 @@ const fetchDashboardTrades = unstable_cache(
 export async function getDashboardTrades(
   fromDate: string | undefined,
   toDate: string | undefined,
-  accountId?: string | null
+  accountIds: string[] = [] // empty = all accounts
 ): Promise<Trade[]> {
   const supabase = createServerClient();
   const {
@@ -46,5 +51,5 @@ export async function getDashboardTrades(
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  return fetchDashboardTrades(user.id, fromDate, toDate, accountId ?? null);
+  return fetchDashboardTrades(user.id, fromDate, toDate, accountIds);
 }

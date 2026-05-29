@@ -28,7 +28,7 @@ export async function getTrades(
 
 export async function getRecentTrades(
   limit: number,
-  accountId?: string | null
+  accountIds: string[] = []
 ): Promise<Trade[]> {
   const supabase = createServerClient();
   const {
@@ -43,7 +43,11 @@ export async function getRecentTrades(
     .order('entry_datetime', { ascending: false })
     .limit(limit);
 
-  if (accountId) query = query.eq('account_id', accountId);
+  if (accountIds.length === 1) {
+    query = query.eq('account_id', accountIds[0]);
+  } else if (accountIds.length > 1) {
+    query = query.in('account_id', accountIds);
+  }
 
   const { data } = await query;
   return data ?? [];
