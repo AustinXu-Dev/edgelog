@@ -11,6 +11,7 @@ import {
   buildPnlByDow,
   buildPnlByHour,
   calcPnlByInstrument,
+  calcWinStreak,
 } from '@/lib/utils/metrics';
 import { formatCurrency, formatPercent, formatR } from '@/lib/utils/formatters';
 import { Topbar } from '@/components/layout/Topbar';
@@ -19,6 +20,7 @@ import { CalendarHeatmap } from '@/components/dashboard/CalendarHeatmap';
 import { RecentTradesTable } from '@/components/dashboard/RecentTradesTable';
 import { DashboardFilterToggle } from '@/components/dashboard/DashboardFilterToggle';
 import { DashboardAccountPicker } from '@/components/dashboard/DashboardAccountPicker';
+import { DashboardShareCard } from '@/components/dashboard/DashboardShareCard';
 import { Card } from '@/components/ui/Card';
 
 // Recharts is ~100KB gzipped — lazy-load so it doesn't block initial page render
@@ -87,6 +89,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const dowData = buildPnlByDow(trades, timezone);
   const hourData = buildPnlByHour(trades, timezone);
   const instrumentData = calcPnlByInstrument(trades);
+  const winStreak = calcWinStreak(trades);
 
   const now = new Date();
   const calYear = now.getFullYear();
@@ -105,6 +108,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               <DashboardAccountPicker accounts={accounts} selectedIds={selectedAccountIds} />
             )}
             <DashboardFilterToggle from={from} to={to} />
+            {/* <DashboardShareCard
+              metrics={metrics}
+              instrumentData={instrumentData}
+              winStreak={winStreak}
+              initialBalance={initialBalance}
+              from={from}
+              to={to}
+            /> */}
           </div>
         }
       />

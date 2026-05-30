@@ -33,7 +33,18 @@ export default async function TradesPage({ searchParams }: PageProps) {
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const activeAccountId = cookies().get('active_account_id')?.value ?? null;
+  let activeAccountId: string | null = cookies().get('active_account_id')?.value ?? null;
+  if (!activeAccountId) {
+    const { data: firstAccount } = await supabase
+      .from('trading_accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    activeAccountId = firstAccount?.id ?? null;
+  }
 
   let query = supabase
     .from('trades')

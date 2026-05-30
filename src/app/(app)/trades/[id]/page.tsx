@@ -12,6 +12,7 @@ import { ScreenshotUploader } from '@/components/journal/ScreenshotUploader';
 import { TagSelector } from '@/components/trades/TagSelector';
 import { StrategySelector } from '@/components/trades/StrategySelector';
 import { DeleteTradeButton } from './DeleteTradeButton';
+import { TradeShareCard } from '@/components/trades/TradeShareCard';
 import { formatCurrency, pnlColor, formatR } from '@/lib/utils/formatters';
 import { LocalDatetime } from '@/components/ui/LocalDatetime';
 
@@ -55,6 +56,7 @@ export default async function TradeDetailPage({ params }: PageProps) {
             <Link href="/trades">
               <Button variant="ghost" size="sm">Back</Button>
             </Link>
+            <TradeShareCard trade={trade} />
             <Link href={`/trades/${trade.id}/edit`}>
               <Button variant="secondary" size="sm"><i className="lni lni-pencil-1 text-sm" />Edit</Button>
             </Link>

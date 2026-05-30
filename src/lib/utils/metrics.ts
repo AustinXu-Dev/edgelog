@@ -15,7 +15,7 @@ export function calcMetrics(trades: Trade[]): DashboardMetrics {
   }
 
   if (tradeCount === 0) {
-    return { totalNetPnl: 0, winRate: 0, profitFactor: 0, avgRMultiple: 0, tradeCount: 0, winCount: 0, lossCount: 0 };
+    return { totalNetPnl: 0, winRate: 0, profitFactor: 0, avgRMultiple: 0, tradeCount: 0, winCount: 0, lossCount: 0, grossProfit: 0, grossLoss: 0 };
   }
 
   return {
@@ -26,7 +26,22 @@ export function calcMetrics(trades: Trade[]): DashboardMetrics {
     tradeCount,
     winCount,
     lossCount,
+    grossProfit,
+    grossLoss,
   };
+}
+
+export function calcWinStreak(trades: Trade[]): number {
+  const sorted = trades
+    .filter((t) => t.status === 'closed' && t.net_pnl !== null && t.exit_datetime)
+    .sort((a, b) => new Date(a.exit_datetime!).getTime() - new Date(b.exit_datetime!).getTime());
+
+  let streak = 0;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if ((sorted[i].net_pnl ?? 0) > 0) streak++;
+    else break;
+  }
+  return streak;
 }
 
 export function buildEquityCurve(trades: Trade[], initialBalance = 0): EquityPoint[] {

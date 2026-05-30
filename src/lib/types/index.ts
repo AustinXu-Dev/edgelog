@@ -127,6 +127,8 @@ export interface DashboardMetrics {
   tradeCount: number;
   winCount: number;
   lossCount: number;
+  grossProfit: number;
+  grossLoss: number;
 }
 
 export interface EquityPoint {
