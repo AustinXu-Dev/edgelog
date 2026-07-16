@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { getDashboardTrades } from '@/lib/db/dashboard';
 import { getRecentTrades } from '@/lib/db/trades';
 import { getAccounts } from '@/lib/db/accounts';
+import { getChecklistsWithItems, getCompletionsForDate, getChecklistStreak } from '@/lib/db/checklists';
 import { createServerClient } from '@/lib/supabase/server';
 import {
   calcMetrics,
@@ -29,6 +30,7 @@ const PnLByInstrument   = dynamic(() => import('@/components/dashboard/PnLByInst
 const PnLByDayOfWeek    = dynamic(() => import('@/components/dashboard/PnLByDayOfWeek').then(m => m.PnLByDayOfWeek), { ssr: false });
 const PnLByTimeOfDay    = dynamic(() => import('@/components/dashboard/PnLByTimeOfDay').then(m => m.PnLByTimeOfDay), { ssr: false });
 const DashboardAIInsights = dynamic(() => import('@/components/dashboard/DashboardAIInsights').then(m => m.DashboardAIInsights), { ssr: false });
+const DailyChecklist = dynamic(() => import('@/components/dashboard/DailyChecklist').then(m => m.DailyChecklist), { ssr: false });
 
 interface PageProps {
   searchParams: { from?: string; to?: string; accs?: string };
@@ -69,9 +71,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     selectedAccountIds = [];
   }
 
-  const [trades, recentTrades] = await Promise.all([
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date());
+
+  const [trades, recentTrades, checklists, completedIds, checklistStreak] = await Promise.all([
     getDashboardTrades(from, to, selectedAccountIds),
     getRecentTrades(10, selectedAccountIds),
+    getChecklistsWithItems(),
+    getCompletionsForDate(today),
+    getChecklistStreak(today),
   ]);
 
   // Sum initial balances of selected accounts for the equity curve baseline
@@ -142,6 +149,16 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             value={formatR(metrics.avgRMultiple)}
           />
         </div>
+
+        {/* Daily Checklist */}
+        <Card title="Daily Checklist">
+          <DailyChecklist
+            checklists={checklists}
+            initialCompletedIds={Array.from(completedIds)}
+            today={today}
+            streak={checklistStreak}
+          />
+        </Card>
 
         {/* Equity Curve */}
         <Card title="Equity Curve">

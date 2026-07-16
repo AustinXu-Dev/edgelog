@@ -1,11 +1,9 @@
 import { cookies } from 'next/headers';
-import { getTags } from '@/lib/db/tags';
 import { getAccounts } from '@/lib/db/accounts';
 import { Topbar } from '@/components/layout/Topbar';
 import { TradeForm } from '@/components/trades/TradeForm';
 
 export default async function NewTradePage() {
-  const allTags = await getTags();
   const activeAccountId = cookies().get('active_account_id')?.value ?? null;
 
   // Check if the active account is breached or archived
@@ -47,7 +45,7 @@ export default async function NewTradePage() {
       <Topbar title="New Trade" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 max-w-2xl">
-          <TradeForm allTags={allTags} initialAccountId={activeAccountId} />
+          <TradeForm initialAccountId={activeAccountId} />
         </div>
       </div>
     </div>

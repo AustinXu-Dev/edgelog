@@ -7,14 +7,12 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { calcPnl, calcRMultiple, getInstrumentType, INSTRUMENT_DEFINITIONS } from '@/lib/utils/csv';
-import { Badge } from '@/components/ui/Badge';
-import type { Trade, Instrument, Direction, TradeStatus, TradeTag, TradingAccount } from '@/lib/types';
+import type { Trade, Instrument, Direction, TradeStatus, TradingAccount } from '@/lib/types';
 import { revalidateDashboard } from '@/app/actions/dashboard';
 
 interface TradeFormProps {
   initialValues?: Partial<Trade>;
   tradeId?: string;
-  allTags?: TradeTag[];
   initialAccountId?: string | null;
 }
 
@@ -36,12 +34,11 @@ function toLocalDatetime(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }: TradeFormProps) {
+export function TradeForm({ initialValues, tradeId, initialAccountId }: TradeFormProps) {
   const router = useRouter();
   const supabase = createBrowserClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [accountId, setAccountId] = useState<string | null>(initialValues?.account_id ?? initialAccountId ?? null);
 
@@ -52,12 +49,6 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
       .order('created_at', { ascending: true })
       .then(({ data }) => setAccounts(data ?? []));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function toggleTag(tagId: string) {
-    setSelectedTagIds((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    );
-  }
 
   const [form, setForm] = useState({
     instrument: initialValues?.instrument ?? 'NQ',
@@ -156,12 +147,6 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
       setError(result.error.message);
       setLoading(false);
     } else {
-      // Save tag links for new trades
-      if (!tradeId && selectedTagIds.length > 0) {
-        await supabase.from('trade_tag_links').insert(
-          selectedTagIds.map((tag_id) => ({ trade_id: result.data.id, tag_id }))
-        );
-      }
       await revalidateDashboard();
       router.push(`/trades/${result.data.id}`);
       router.refresh();
@@ -290,31 +275,6 @@ export function TradeForm({ initialValues, tradeId, allTags, initialAccountId }:
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
           </select>
-        </div>
-      )}
-
-      {!tradeId && allTags !== undefined && (
-        <div className="flex flex-col gap-2">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-            Tags
-            <span className="ml-1.5 text-gray-400 font-normal normal-case tracking-normal">(optional)</span>
-          </label>
-          {allTags.length === 0 ? (
-            <p className="text-sm text-gray-400">No tags yet. Create tags from a trade&apos;s detail page.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {allTags.map((tag) => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => toggleTag(tag.id)}
-                  className={`transition-opacity ${selectedTagIds.includes(tag.id) ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
-                >
-                  <Badge label={tag.name} color={tag.color} />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
 

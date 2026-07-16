@@ -2,14 +2,12 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { getTradeById } from '@/lib/db/trades';
-import { getTags } from '@/lib/db/tags';
 import { getStrategies } from '@/lib/db/strategies';
 import { Topbar } from '@/components/layout/Topbar';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { JournalEditor } from '@/components/journal/JournalEditor';
 import { ScreenshotUploader } from '@/components/journal/ScreenshotUploader';
-import { TagSelector } from '@/components/trades/TagSelector';
 import { StrategySelector } from '@/components/trades/StrategySelector';
 import { DeleteTradeButton } from './DeleteTradeButton';
 import { TradeShareCard } from '@/components/trades/TradeShareCard';
@@ -27,9 +25,8 @@ export default async function TradeDetailPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [trade, allTags, allStrategies] = await Promise.all([
+  const [trade, allStrategies] = await Promise.all([
     getTradeById(params.id),
-    getTags(),
     getStrategies(),
   ]);
 
@@ -44,7 +41,6 @@ export default async function TradeDetailPage({ params }: PageProps) {
     screenshotUrl = data?.signedUrl ?? null;
   }
 
-  const selectedTagIds = trade.tags?.map((t) => t.id) ?? [];
   const selectedStrategyIds = trade.strategies?.map((s) => s.id) ?? [];
 
   return (
@@ -130,15 +126,6 @@ export default async function TradeDetailPage({ params }: PageProps) {
             </dl>
           </Card>
         </div>
-
-        {/* Tags */}
-        <Card title="Tags">
-          <TagSelector
-            tradeId={trade.id}
-            allTags={allTags}
-            selectedTagIds={selectedTagIds}
-          />
-        </Card>
 
         {/* Strategy / Playbook */}
         <Card title="Strategy / Playbook">
