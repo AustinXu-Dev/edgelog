@@ -90,6 +90,38 @@ export interface ChecklistWithItems extends Checklist {
   items: ChecklistItem[];
 }
 
+export interface ConsistencyTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  default_consistency_percent: number;
+  created_at: string;
+}
+
+export interface ConsistencyCalculatorDay {
+  id: string;
+  calculator_id: string;
+  user_id: string;
+  day_number: number;
+  value: number | null;
+  created_at: string;
+}
+
+export interface ConsistencyCalculator {
+  id: string;
+  user_id: string;
+  name: string;
+  consistency_percent: number;
+  account_id: string | null;
+  custom_account_size: number | null;
+  target_profit: number | null;
+  created_at: string;
+}
+
+export interface ConsistencyCalculatorWithDays extends ConsistencyCalculator {
+  days: ConsistencyCalculatorDay[];
+}
+
 export interface TradingStrategy {
   id: string;
   user_id: string;

@@ -72,6 +72,30 @@ export async function updateAccountStatus(
   return !error;
 }
 
+export async function getAccountCurrentBalance(accountId: string): Promise<number> {
+  const supabase = createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { data: account } = await supabase
+    .from('trading_accounts')
+    .select('initial_balance')
+    .eq('id', accountId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!account) return 0;
+
+  const [{ data: pnl }, totalAdjustments] = await Promise.all([
+    supabase.rpc('get_account_pnl', { p_account_id: accountId }),
+    getTotalAdjustments(accountId),
+  ]);
+
+  return account.initial_balance + (pnl ?? 0) + totalAdjustments;
+}
+
 export async function getTotalAdjustments(accountId: string): Promise<number> {
   const supabase = createServerClient();
   const {
