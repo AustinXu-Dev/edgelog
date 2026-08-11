@@ -13,6 +13,7 @@ const navItems = [
   { href: '/journal', label: 'Journal', icon: 'lni-notebook-1' },
   { href: '/playbooks', label: 'Playbooks', icon: 'lni-book-1' },
   { href: '/checklists', label: 'Checklists', icon: 'lni-check-square-2' },
+  { href: '/consistency', label: 'Consistency', icon: 'lni-calculator-1' },
   { href: '/settings', label: 'Settings', icon: 'lni-gear-1' },
 ];
 
