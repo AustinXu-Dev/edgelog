@@ -27,7 +27,7 @@ export interface BalanceAdjustment {
 
 export type Instrument =
   // CME Equity Futures
-  | 'NQ' | 'ES' | 'MNQ' | 'MES' | 'YM' | 'MYM' | 'RTY' | 'M2K'
+  | 'NQ' | 'ES' | 'MNQ' | 'MES' | 'YM' | 'MYM' | 'RTY' | 'M2K' | 'NQCFD' | 'ESCFD'
   // CME Metals Futures
   | 'GC' | 'MGC' | 'SI' | 'SIL' | 'PL'
   // CME Energy Futures

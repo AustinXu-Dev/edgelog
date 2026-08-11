@@ -11,6 +11,8 @@ export const POINT_VALUES: Record<string, number> = {
   MYM: 0.5,     // Micro E-mini Dow ($0.50/pt)
   RTY: 50,      // E-mini Russell 2000 ($50/pt)
   M2K: 5,       // Micro E-mini Russell 2000 ($5/pt)
+  NQCFD: 1,
+  ESCFD: 1,
   // CME Metals Futures
   GC: 100,      // Gold — 100 troy oz ($100/pt)
   MGC: 10,      // Micro Gold — 10 troy oz ($10/pt)
@@ -55,6 +57,8 @@ export const INSTRUMENT_DEFINITIONS: { value: string; label: string; shortLabel:
   { value: 'MYM',    label: 'MYM — Micro Dow',               shortLabel: 'MYM' },
   { value: 'RTY',    label: 'RTY — Russell 2000',             shortLabel: 'RTY' },
   { value: 'M2K',    label: 'M2K — Micro Russell 2000',      shortLabel: 'M2K' },
+  { value: 'NQCFD',  label: 'NQ CFD — Nasdaq-100 CFD',       shortLabel: 'NQ CFD' },
+  { value: 'ESCFD',  label: 'ES CFD — S&P 500 CFD',          shortLabel: 'ES CFD' },
   // CME Metals Futures
   { value: 'GC',     label: 'GC — Gold Futures',             shortLabel: 'GC' },
   { value: 'MGC',    label: 'MGC — Micro Gold',              shortLabel: 'MGC' },
