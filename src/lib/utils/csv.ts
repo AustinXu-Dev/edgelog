@@ -11,8 +11,8 @@ export const POINT_VALUES: Record<string, number> = {
   MYM: 0.5,     // Micro E-mini Dow ($0.50/pt)
   RTY: 50,      // E-mini Russell 2000 ($50/pt)
   M2K: 5,       // Micro E-mini Russell 2000 ($5/pt)
-  NQCFD: 1,
-  ESCFD: 1,
+  NQCFD: 10,
+  ESCFD: 10,
   // CME Metals Futures
   GC: 100,      // Gold — 100 troy oz ($100/pt)
   MGC: 10,      // Micro Gold — 10 troy oz ($10/pt)
